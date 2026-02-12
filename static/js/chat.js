@@ -36,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const provider = getSelectedProvider();
             const token = localStorage.getItem('authToken');
-            const backendBase = 'http://127.0.0.1:8002';
-            const res = await fetch(`${backendBase}/api/chat`, {
+            const backendBase = ''; // Use relative path for Flask
+            const res = await fetch(`/api/chat`, {
                 method: 'POST',
                 headers: Object.assign(
                     { 'Content-Type': 'application/json' },
