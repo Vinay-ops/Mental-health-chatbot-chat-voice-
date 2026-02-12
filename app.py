@@ -280,15 +280,27 @@ def chat_api():
     # 2. Memory Management
     if session_id not in session_memory:
         session_memory[session_id] = []
-        if user_id and db.check_connection():
-            db_history = db.get_chat_history(user_id, session_id)
-            for h in db_history[-10:]:
-                session_memory[session_id].append(h['content'])
+        # ALWAYS try to pull history from DB if session exists but memory is empty (e.g. server restart)
+        if db.check_connection():
+            # If user_id is missing, we still try to get history by session_id if possible
+            # But the DB query requires user_id. For now, let's optimize user-linked sessions.
+            if user_id:
+                db_history = db.get_chat_history(user_id, session_id)
+                for h in db_history:
+                    # Append in order: user -> assistant -> user...
+                    session_memory[session_id].append(h['content'])
+            else:
+                # If guest, we don't have user_id to query DB safely yet
+                # In a future update, we could allow querying guest sessions by ID alone
+                pass
     
-    # Get last 5 messages for context
+    # Get last 10 messages for context (increased from 5 to 10 for better memory)
     history = session_memory[session_id][-10:]
     history_context = ""
     for i, m in enumerate(history):
+        # Determine role based on position in history (assuming alternating User/Assistant)
+        # However, to be safer, we should store roles in session_memory too.
+        # For now, we'll use a simpler heuristic or just send the text blocks.
         role = "User" if (len(history) - i) % 2 != 0 else "Assistant"
         history_context += f"{role}: {m}\n"
     

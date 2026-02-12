@@ -37,7 +37,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialization ---
     async function initSession() {
-        if (!sessionId) {
+        const storedSessionId = localStorage.getItem('chat_session_id');
+        if (storedSessionId) {
+            sessionId = storedSessionId;
+            console.log("DEBUG: Restored session ID:", sessionId);
+            // Load history for the restored session to ensure UI sync
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                loadHistory(sessionId);
+            }
+        } else {
             await startNewChat();
         }
         loadSessions();
