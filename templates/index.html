@@ -1,136 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindCare Navigator - Safe AI Support</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">MindCare Navigator</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('home') }}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('features') }}">Features</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('chat') }}">Start Chat</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('contact') }}">Support</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% block title %}MindCare Navigator - Safe AI Support{% endblock %}
 
-    <header class="hero-section">
-        <!-- Floating Shapes -->
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-7 text-start fade-in-up">
-                    <h1 class="hero-title fw-bold">Safe, Voice-Enabled <br><span style="color: var(--brand-blue)">Mental Health</span> Support</h1>
-                    <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;">This system provides emotional support, stress guidance, and referral awareness without diagnosis or therapy. Designed for safety, accessibility, and you.</p>
-                    <div class="d-flex justify-content-start gap-4">
-                        <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5">Start Chat</a>
-                        <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5">Use Voice</a>
-                    </div>
+{% block content %}
+<header class="hero-section">
+    <!-- Floating Shapes -->
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7 text-start fade-in-up">
+                <h1 class="hero-title fw-bold" data-t="hero_title_main">Safe, Voice-Enabled Mental Health Support</h1>
+                <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;" data-t="hero_subtitle">This system provides emotional support, stress guidance, and referral awareness without diagnosis or therapy. Designed for safety, accessibility, and you.</p>
+                <div class="d-flex flex-wrap justify-content-start gap-3">
+                    <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5 rounded-pill shadow" data-t="nav_chat">Start Chat</a>
+                    <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5 rounded-pill" data-t="chat_action_how">Use Voice</a>
                 </div>
-                <div class="col-lg-5 d-none d-lg-block fade-in-up" style="animation-delay: 0.2s;">
-                    <div class="hero-image-container">
-                        <img src="https://img.freepik.com/free-vector/mental-health-awareness-concept_23-2148531011.jpg?t=st=1710831000&exp=1710834600&hmac=7e8e9e" alt="Mental Health Support" class="img-fluid rounded-5 shadow-lg" style="animation: float 5s ease-in-out infinite;">
-                    </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block fade-in-up" style="animation-delay: 0.2s;">
+                <div class="hero-image-container">
+                    <img src="https://img.freepik.com/free-vector/mental-health-awareness-concept_23-2148531011.jpg?t=st=1710831000&exp=1710834600&hmac=7e8e9e" alt="Mental Health Support" class="img-fluid rounded-5 shadow-lg" style="animation: float 5s ease-in-out infinite;">
                 </div>
             </div>
         </div>
-    </header>
+    </div>
+</header>
 
-    <!-- Core Pillars Section -->
-    <section class="py-5">
-        <div class="container">
-            <div class="text-center mb-5 fade-in-up">
-                <h2 class="fw-bold">Our Commitment to You</h2>
-                <p class="text-muted">Safe, ethical, and accessible navigation for everyone.</p>
+<!-- Core Pillars Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5 fade-in-up">
+            <h2 class="fw-bold" data-t="index_commitment_h">Our Commitment to You</h2>
+            <p class="text-muted" data-t="index_commitment_p">Safe, ethical, and accessible navigation for everyone.</p>
+        </div>
+        <div class="row g-4 text-center">
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.1s;">
+                <div class="card glass-card h-100 border-0 shadow-sm p-4 text-start" style="border-radius: 20px; transition: all 0.3s ease;">
+                    <div class="feature-icon bg-soft-blue mb-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 15px;">
+                        <i class="bi bi-cpu fs-3"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3" data-t="index_rag_h">AI + RAG Grounding</h4>
+                    <p class="text-muted" data-t="index_rag_p">Our system uses Retrieval-Augmented Generation to ensure responses are grounded in verified mental health resources.</p>
+                    <a href="{{ url_for('features') }}" class="mt-auto text-decoration-none fw-bold">Learn more <i class="bi bi-arrow-right"></i></a>
+                </div>
             </div>
-            <div class="row g-4 text-center">
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.1s;">
-                    <div class="p-4 card h-100">
-                        <div class="feature-icon bg-soft-blue mx-auto">
-                            <i class="bi bi-cpu"></i>
-                        </div>
-                        <h3>AI + RAG Grounding</h3>
-                        <p class="text-muted">Our system uses Retrieval-Augmented Generation to ensure responses are grounded in verified mental health resources.</p>
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
+                <div class="card glass-card h-100 border-0 shadow-sm p-4 text-start" style="border-radius: 20px; transition: all 0.3s ease;">
+                    <div class="feature-icon bg-soft-green mb-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 15px;">
+                        <i class="bi bi-people fs-3"></i>
                     </div>
+                    <h4 class="fw-bold mb-3" data-t="index_community_h">Community Focused</h4>
+                    <p class="text-muted" data-t="index_community_p">Designed specifically to reach those who lack access to traditional mental health services through simple, accessible tech.</p>
+                    <a href="{{ url_for('about') }}" class="mt-auto text-decoration-none fw-bold">Our mission <i class="bi bi-arrow-right"></i></a>
                 </div>
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
-                    <div class="p-4 card h-100">
-                        <div class="feature-icon bg-soft-green mx-auto">
-                            <i class="bi bi-people"></i>
-                        </div>
-                        <h3>Underserved Communities</h3>
-                        <p class="text-muted">Designed specifically to reach those who lack access to traditional mental health services.</p>
+            </div>
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
+                <div class="card glass-card h-100 border-0 shadow-sm p-4 text-start" style="border-radius: 20px; transition: all 0.3s ease;">
+                    <div class="feature-icon bg-soft-purple mb-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 15px;">
+                        <i class="bi bi-shield-check fs-3"></i>
                     </div>
-                </div>
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
-                    <div class="p-4 card h-100">
-                        <div class="feature-icon bg-soft-purple mx-auto">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <h3>Ethical & Non-Diagnostic</h3>
-                        <p class="text-muted">We focus on emotional guidance and safety, strictly avoiding medical diagnosis or formal therapy.</p>
-                    </div>
+                    <h4 class="fw-bold mb-3" data-t="index_ethical_h">Ethical & Safe</h4>
+                    <p class="text-muted" data-t="index_ethical_p">We focus on emotional guidance and safety, strictly avoiding medical diagnosis or formal therapy in all interactions.</p>
+                    <a href="{{ url_for('contact') }}" class="mt-auto text-decoration-none fw-bold">Get support <i class="bi bi-arrow-right"></i></a>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Call to Action -->
-    <section class="py-5 bg-white">
-        <div class="container text-center">
-            <h2 class="mb-4">Ready to find some peace?</h2>
-            <p class="mb-5">Speak or chat with MindCare Navigator today. We're here to listen.</p>
-            <a href="chat.html" class="btn btn-primary btn-lg px-5">Get Started</a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="fw-bold mb-3">MindCare Navigator</h5>
-                    <p class="text-muted">Safe, ethical, and accessible mental health support navigation.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-decoration-none text-muted">Privacy Policy</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Terms of Service</a></li>
-                        <li><a href="contact.html" class="text-decoration-none text-muted">Emergency Help</a></li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="my-4">
-            <div class="text-center">
-                <p class="disclaimer mb-0">Disclaimer: MindCare Navigator does not provide medical diagnosis or therapy. If you are in crisis, please contact emergency services immediately.</p>
-                <p class="text-muted mt-2">&copy; 2026 MindCare Navigator. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Bootstrap Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-</body>
-</html>
+<!-- Call to Action -->
+<section class="py-5 bg-white">
+    <div class="container text-center">
+        <h2 class="mb-4" data-t="index_cta_h">Ready to find some peace?</h2>
+        <p class="mb-5" data-t="index_cta_p">Speak or chat with MindCare Navigator today. We're here to listen.</p>
+        <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5" data-t="index_cta_btn">Get Started</a>
+    </div>
+</section>
+{% endblock %}

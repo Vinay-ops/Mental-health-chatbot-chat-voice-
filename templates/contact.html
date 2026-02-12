@@ -1,98 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support - MindCare Navigator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">MindCare Navigator</a>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('features') }}">Features</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('chat') }}">Start Chat</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('contact') }}">Support</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% block title %}Support - MindCare Navigator{% endblock %}
 
-    <main class="py-5" style="background: radial-gradient(circle at top right, #fff9c4, transparent);">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="alert alert-danger rounded-4 p-4 mb-5 border-0 shadow-sm fade-in-up" role="alert" style="background: rgba(255, 235, 238, 0.8); backdrop-filter: blur(10px);">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-exclamation-triangle-fill fs-1 me-4 text-danger"></i>
-                            <div>
-                                <h4 class="alert-heading fw-bold text-danger">Emergency Helpline</h4>
-                                <p class="mb-0 text-dark">If you or someone you know is in immediate danger or experiencing a life-threatening crisis, please call emergency services (911 in the US) or go to the nearest emergency room immediately.</p>
-                            </div>
+{% block content %}
+<section class="py-5" style="background: radial-gradient(circle at top right, #fff9c4, transparent);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="alert alert-danger rounded-4 p-4 mb-5 border-0 shadow-sm fade-in-up" role="alert" style="background: rgba(255, 235, 238, 0.8); backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill fs-1 me-4 text-danger"></i>
+                        <div>
+                            <h4 class="alert-heading fw-bold text-danger" data-t="contact_emergency_h">Emergency Helpline</h4>
+                            <p class="mb-0 text-dark" data-t="contact_emergency_p">If you or someone you know is in immediate danger or experiencing a life-threatening crisis, please call emergency services (911 in the US) or go to the nearest emergency room immediately.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-5">
+                    <div class="col-md-6 fade-in-up" style="animation-delay: 0.1s;">
+                        <h2 class="fw-bold mb-4" data-t="contact_crisis_h">Crisis Contacts</h2>
+                        <div class="card mb-4 border-start border-4 border-primary">
+                            <h5 class="fw-bold" data-t="contact_lifeline">National Suicide Prevention Lifeline</h5>
+                            <p class="mb-1 text-primary fw-bold fs-4">Call or Text: 988</p>
+                            <small class="text-muted" data-t="contact_lifeline_sub">Available 24/7, free, and confidential.</small>
+                        </div>
+                        <div class="card mb-4 border-start border-4 border-primary">
+                            <h5 class="fw-bold" data-t="contact_textline">Crisis Text Line</h5>
+                            <p class="mb-1 text-primary fw-bold fs-4">Text HOME to 741741</p>
+                            <small class="text-muted" data-t="contact_textline_sub">Connect with a volunteer Crisis Counselor.</small>
+                        </div>
+                        <div class="card mb-4 border-start border-4 border-primary">
+                            <h5 class="fw-bold" data-t="contact_trevor">The Trevor Project (LGBTQ Youth)</h5>
+                            <p class="mb-1 text-primary fw-bold fs-4">1-866-488-7386</p>
+                            <small class="text-muted" data-t="contact_trevor_sub">Crisis intervention and suicide prevention.</small>
                         </div>
                     </div>
 
-                    <div class="row g-5">
-                        <div class="col-md-6 fade-in-up" style="animation-delay: 0.1s;">
-                            <h2 class="fw-bold mb-4">Crisis Contacts</h2>
-                            <div class="card mb-4 border-start border-4 border-primary">
-                                <h5 class="fw-bold">National Suicide Prevention Lifeline</h5>
-                                <p class="mb-1 text-primary fw-bold fs-4">Call or Text: 988</p>
-                                <small class="text-muted">Available 24/7, free, and confidential.</small>
+                    <div class="col-md-6 fade-in-up" style="animation-delay: 0.2s;">
+                        <h2 class="fw-bold mb-4" data-t="contact_us_h">Contact Us</h2>
+                        <p class="text-muted mb-4" data-t="contact_us_p">Have questions about MindCare Navigator? We'd love to hear from you. Please note we cannot provide medical advice via email.</p>
+                        
+                        <form class="card glass-card" id="contact-form">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" data-t="contact_label_name">Full Name</label>
+                                <input type="text" id="contact-name" class="form-control chat-input" placeholder="John Doe" data-t="contact_label_name" required>
                             </div>
-                            <div class="card mb-4 border-start border-4 border-primary">
-                                <h5 class="fw-bold">Crisis Text Line</h5>
-                                <p class="mb-1 text-primary fw-bold fs-4">Text HOME to 741741</p>
-                                <small class="text-muted">Connect with a volunteer Crisis Counselor.</small>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" data-t="contact_label_email">Email Address</label>
+                                <input type="email" id="contact-email" class="form-control chat-input" placeholder="john@example.com" data-t="contact_label_email" required>
                             </div>
-                            <div class="card mb-4 border-start border-4 border-primary">
-                                <h5 class="fw-bold">The Trevor Project (LGBTQ Youth)</h5>
-                                <p class="mb-1 text-primary fw-bold fs-4">1-866-488-7386</p>
-                                <small class="text-muted">Crisis intervention and suicide prevention.</small>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" data-t="contact_label_message">Message</label>
+                                <textarea id="contact-message" class="form-control chat-input" rows="4" placeholder="How can we help?" data-t="contact_label_message" required></textarea>
                             </div>
-                        </div>
-
-                        <div class="col-md-6 fade-in-up" style="animation-delay: 0.2s;">
-                            <h2 class="fw-bold mb-4">Contact Us</h2>
-                            <p class="text-muted mb-4">Have questions about MindCare Navigator? We'd love to hear from you. Please note we cannot provide medical advice via email.</p>
-                            
-                            <form class="card">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Full Name</label>
-                                    <input type="text" class="form-control chat-input" placeholder="John Doe">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Email Address</label>
-                                    <input type="email" class="form-control chat-input" placeholder="john@example.com">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Message</label>
-                                    <textarea class="form-control chat-input" rows="4" placeholder="How can we help?"></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100 py-3 mt-2">Send Message</button>
-                            </form>
-                        </div>
+                            <button type="submit" class="btn btn-primary w-100 py-3 mt-2" id="submit-btn" data-t="contact_btn_send">Send Message</button>
+                            <div id="form-feedback" class="mt-3 text-center" style="display: none;"></div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</section>
+{% endblock %}
 
-    <footer class="footer mt-5">
-        <div class="container text-center">
-            <p class="disclaimer">Disclaimer: MindCare Navigator does not provide medical diagnosis or therapy.</p>
-            <p class="text-muted">&copy; 2026 MindCare Navigator. All rights reserved.</p>
-        </div>
-    </footer>
+{% block extra_js %}
+<script>
+    document.getElementById('contact-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submit-btn');
+        const feedback = document.getElementById('form-feedback');
+        const data = {
+            name: document.getElementById('contact-name').value,
+            email: document.getElementById('contact-email').value,
+            message: document.getElementById('contact-message').value
+        };
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            
+            feedback.style.display = 'block';
+            if (res.ok) {
+                feedback.className = 'mt-3 text-center text-success';
+                feedback.textContent = result.success;
+                document.getElementById('contact-form').reset();
+            } else {
+                feedback.className = 'mt-3 text-center text-danger';
+                feedback.textContent = result.error || 'Something went wrong';
+            }
+        } catch (err) {
+            feedback.style.display = 'block';
+            feedback.className = 'mt-3 text-center text-danger';
+            feedback.textContent = 'Failed to connect to server';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Send Message';
+        }
+    });
+</script>
+{% endblock %}

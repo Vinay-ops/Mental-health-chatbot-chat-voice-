@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Login - MindCare Navigator{% endblock %}
+
+{% block content %}
+<section class="auth-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card glass-card border-0 shadow-sm p-4">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold" data-t="login_title">Welcome Back</h2>
+                        <p class="text-muted" data-t="login_subtitle">Sign in to continue your journey</p>
+                    </div>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="email" class="form-label" data-t="login_email">Email Address</label>
+                            <input type="email" class="form-control" id="email" placeholder="name@example.com" data-t="login_email" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label" data-t="login_password">Password</label>
+                            <input type="password" class="form-control" id="password" placeholder="••••••••" data-t="login_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 mb-3" data-t="login_btn">Sign In</button>
+                    </form>
+                    <div class="text-center">
+                        <p class="mb-0 text-muted"><span data-t="login_footer">Don't have an account?</span> <a href="{{ url_for('register_page') }}" class="text-primary fw-semibold" data-t="login_link">Register here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            localStorage.setItem('authToken', data.token);
+            window.location.href = '/chat';
+        } else {
+            alert(data.error || 'Login failed');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Something went wrong. Please try again.');
+    }
+});
+</script>
+{% endblock %}

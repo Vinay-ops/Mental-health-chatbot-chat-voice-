@@ -1,119 +1,166 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - MindCare Navigator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body class="bg-light">
+{% extends "base.html" %}
 
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">MindCare Navigator</a>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('features') }}">Features</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('chat') }}">Start Chat</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('contact') }}">Support</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% block title %}Chat - MindCare Navigator{% endblock %}
 
-    <main class="container">
-        <div class="chat-container">
-            <div class="chat-header">
-                <h5 class="mb-0 fw-bold">MindCare Assistant</h5>
-                <small class="text-muted">Safe • Grounded • Non-Diagnostic</small>
-                <div class="ms-auto d-flex align-items-center gap-2">
-                    <select class="form-select form-select-sm" id="provider-select" style="width: 180px;">
-                        <option value="">Default</option>
-                        <option value="ollama">Ollama (Free)</option>
-                        <option value="gemini">Gemini</option>
-                        <option value="grok">Grok</option>
-                    </select>
-                    <button class="btn btn-outline-primary btn-sm" id="login-btn">Login</button>
-                    <button class="btn btn-primary btn-sm" id="register-btn">Create Account</button>
-                </div>
-            </div>
-            
-            <div class="chat-messages" id="chat-messages">
-                <div class="message message-ai">
-                    Hello! I'm MindCare Navigator. How are you feeling today? I'm here to listen and guide you to resources.
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions" id="quick-actions">
-                <div class="action-chip">I'm feeling stressed</div>
-                <div class="action-chip">Need local resources</div>
-                <div class="action-chip">Breathing exercises</div>
-                <div class="action-chip">How does this work?</div>
-            </div>
-
-            <!-- Typing Indicator -->
-            <div class="typing-indicator ms-3" id="typing-indicator">
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-            </div>
-
-            <div class="chat-input-area">
-                <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-                    <div class="recording-ring" id="recording-ring"></div>
-                    <button class="mic-btn" id="mic-btn" title="Voice Input">
-                        <i class="bi bi-mic-fill"></i>
-                    </button>
-                </div>
-                <input type="text" class="chat-input" id="user-input" placeholder="Type your message here..." autocomplete="off">
-                <button class="btn btn-primary rounded-circle p-2" id="send-btn" style="width: 45px; height: 45px;">
-                    <i class="bi bi-send-fill"></i>
-                </button>
-            </div>
-            
-            <div class="disclaimer">
-                This system does not provide diagnosis or therapy. If you are in crisis, please call emergency services.
-            </div>
-        </div>
-    </main>
-
-    <div class="modal fade" id="authModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="authModalTitle">Login</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" id="auth-email" autocomplete="off">
+{% block content %}
+<section class="py-5 bg-light min-vh-100">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 30px;">
+                    <!-- Chat Header -->
+                    <div class="card-header bg-white border-bottom py-3 px-4">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-5 text-center text-md-start">
+                                <h4 class="mb-0 fw-bold text-primary" data-t="chat_header">MindCare Assistant</h4>
+                                <p class="text-muted small mb-0"><i class="bi bi-shield-check me-1"></i><span data-t="chat_status">Safe • Grounded • Non-Diagnostic</span></p>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="d-flex flex-wrap justify-content-center justify-content-md-end align-items-center gap-2">
+                                    <div class="d-flex gap-2 me-md-3">
+                                        <button class="btn btn-primary px-3 rounded-pill btn-sm" id="mode-chat-btn">
+                                            <i class="bi bi-chat-dots-fill me-2"></i><span data-t="chat_mode_chat">Chat</span>
+                                        </button>
+                                        <button class="btn btn-outline-primary px-3 rounded-pill btn-sm" id="mode-voice-btn">
+                                            <i class="bi bi-mic-fill me-2"></i><span data-t="chat_mode_voice">Voice</span>
+                                        </button>
+                                    </div>
+                                    <select class="form-select form-select-sm border-0 bg-light rounded-pill" id="provider-select" style="width: 160px;">
+                                        <option value="groq">Groq (Ultra Fast)</option>
+                                        <option value="gemini">Gemini (Smartest)</option>
+                                        <option value="ollama">Ollama (Local)</option>
+                                        <option value="grok">Grok (X.ai)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" id="auth-password">
+
+                    <!-- Chat Body -->
+                    <div class="card-body p-0 d-flex flex-column" style="height: 75vh; min-height: 550px; max-height: 850px;">
+                        <!-- Chat Mode View -->
+                        <div id="chat-mode-view" class="h-100 d-flex flex-column overflow-hidden">
+                            <div class="chat-messages flex-grow-1 p-3 p-md-4" id="chat-messages" style="overflow-y: auto; background-color: #f8faff;">
+                                <div class="message message-ai">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="ai-icon-container">
+                                            <i class="bi bi-robot"></i>
+                                        </div>
+                                        <div class="message-content" data-t="chat_welcome">
+                                            Hello! I'm MindCare Navigator. How are you feeling today? I'm here to listen and guide you to resources.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Mode View -->
+                        <div id="voice-mode-view" class="h-100 d-flex flex-column justify-content-center align-items-center p-3 p-md-5 text-center" style="display: none !important; background-color: #f8faff; overflow-y: auto;">
+                            <div class="voice-status mb-4 mt-auto">
+                                <div class="recording-visualizer mb-4">
+                                    <div class="pulse-ring"></div>
+                                    <div class="pulse-ring delay-1"></div>
+                                    <div class="main-mic-btn">
+                                        <i class="bi bi-mic-fill"></i>
+                                    </div>
+                                </div>
+                                <h3 class="fw-bold text-primary mb-2 px-3" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
+                                <p class="text-muted px-3" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
+                            </div>
+                            
+                            <div class="transcript-box p-3 p-md-4 bg-white rounded-4 shadow-sm w-100 mb-4" style="max-width: 500px; min-height: 120px;">
+                                <p class="text-muted mb-2 small fw-bold text-uppercase" data-t="voice_you_said">You said:</p>
+                                <div id="voice-transcript" class="fs-5 text-dark" style="word-break: break-word;">...</div>
+                            </div>
+                            
+                            <div class="ai-reply-box p-3 p-md-4 bg-primary text-white rounded-4 shadow-sm w-100 mb-auto" style="max-width: 500px; display: none;" id="voice-ai-reply-box">
+                                <p class="text-white-50 mb-2 small fw-bold text-uppercase" data-t="voice_assistant_reply">MindCare Assistant:</p>
+                                <div id="voice-ai-reply" class="fs-5" style="word-break: break-word;">...</div>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator (Shared) -->
+                        <div class="typing-indicator px-4 py-2" id="typing-indicator" style="display: none;">
+                            <div class="bg-white p-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-1">
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions (Chat Mode Only) -->
+                        <div class="quick-actions px-3 px-md-4 pb-2 d-flex flex-nowrap gap-2 overflow-x-auto" id="quick-actions" style="scrollbar-width: none; -ms-overflow-style: none;">
+                            <style>.quick-actions::-webkit-scrollbar { display: none; }</style>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_stress">I'm feeling stressed</button>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_resources">Need local resources</button>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_breathing">Breathing exercises</button>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_how">How does this work?</button>
+                        </div>
+
+                        <!-- Chat Input Area (Chat Mode Only) -->
+                        <div class="chat-input-area p-3 p-md-4 bg-white border-top" id="chat-input-area">
+                            <div class="input-group gap-2 align-items-center">
+                                <input type="text" class="form-control border-0 bg-light px-3 px-md-4 py-2 py-md-3 rounded-pill chat-input" id="user-input" placeholder="Type your message here..." autocomplete="off" data-t="chat_placeholder">
+                                <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center flex-shrink-0" id="send-btn" style="width: 45px; height: 45px; md-width: 50px; md-height: 50px;">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer Info -->
+                        <div class="text-center pb-3 bg-white">
+                            <small class="text-muted" style="font-size: 0.75rem;" data-t="chat_info">
+                                <i class="bi bi-info-circle me-1"></i>This system does not provide diagnosis or therapy. If in crisis, call emergency services.
+                            </small>
+                        </div>
                     </div>
-                    <div class="mb-3 d-none" id="auth-name-wrap">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" id="auth-name" autocomplete="off">
-                    </div>
-                    <div class="text-danger small d-none" id="auth-error"></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" id="auth-submit">Submit</button>
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
-</body>
-</html>
+<style>
+.recording-visualizer {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+}
+.main-mic-btn {
+    width: 100px;
+    height: 100px;
+    background: var(--bs-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2.5rem;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.main-mic-btn:active { transform: scale(0.9); }
+.pulse-ring {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 4px solid var(--bs-primary);
+    border-radius: 50%;
+    opacity: 0;
+}
+.is-recording .pulse-ring {
+    animation: pulse 2s infinite;
+}
+.delay-1 { animation-delay: 0.5s !important; }
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

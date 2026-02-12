@@ -1,150 +1,267 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Elements ---
+    const chatModeBtn = document.getElementById('mode-chat-btn');
+    const voiceModeBtn = document.getElementById('mode-voice-btn');
+    const chatModeView = document.getElementById('chat-mode-view');
+    const voiceModeView = document.getElementById('voice-mode-view');
+    const chatInputArea = document.getElementById('chat-input-area');
+    const quickActions = document.getElementById('quick-actions');
+    
     const chatMessages = document.getElementById('chat-messages');
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
-    const micBtn = document.getElementById('mic-btn');
-    const typingIndicator = document.getElementById('typing-indicator');
-    const recordingRing = document.getElementById('recording-ring');
-    const quickActions = document.getElementById('quick-actions');
-
-    // AI Response Logic
-    function getAIResponse(message) {
-        const msg = message.toLowerCase();
-        if (msg.includes('hello') || msg.includes('hi')) return "Hello! I'm here to support you. How are you feeling today?";
-        if (msg.includes('stressed') || msg.includes('stress')) return "I'm sorry you're feeling stressed. Would you like to try a quick breathing exercise or find some local support resources?";
-        if (msg.includes('resources')) return "I can help with that. Are you looking for local clinics, hotlines, or online support groups?";
-        if (msg.includes('breathing')) return "Let's try the 4-7-8 technique: Inhale for 4s, hold for 7s, exhale for 8s. Shall we start?";
-        if (msg.includes('help') || msg.includes('support')) return "I'm here for you. If this is an emergency, please visit our Contact page for immediate helpline numbers.";
-        return "I hear you. Could you tell me a bit more about that? I'm here to listen and help navigate your options.";
-    }
-
     const providerSelect = document.getElementById('provider-select');
-    function getSelectedProvider() {
-        const p = localStorage.getItem('provider') || '';
-        if (providerSelect) providerSelect.value = p;
-        return p || null;
-    }
+    const typingIndicator = document.getElementById('typing-indicator');
+    
+    const voiceMicBtn = document.querySelector('.main-mic-btn');
+    const voiceStatusText = document.getElementById('voice-status-text');
+    const voiceTranscript = document.getElementById('voice-transcript');
+    const voiceAiReply = document.getElementById('voice-ai-reply');
+    const voiceAiReplyBox = document.getElementById('voice-ai-reply-box');
+    const recordingVisualizer = document.querySelector('.recording-visualizer');
+
+    // --- State ---
+    let currentMode = 'chat'; // 'chat' or 'voice'
+    let isRecording = false;
+    const synth = window.speechSynthesis;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    // --- Initialization ---
     if (providerSelect) {
+        providerSelect.value = localStorage.getItem('provider') || 'groq';
         providerSelect.addEventListener('change', () => {
-            localStorage.setItem('provider', providerSelect.value || '');
+            localStorage.setItem('provider', providerSelect.value);
         });
-        const initP = localStorage.getItem('provider') || '';
-        providerSelect.value = initP;
     }
 
-    async function fetchAIResponse(message) {
-        try {
-            const provider = getSelectedProvider();
-            const token = localStorage.getItem('authToken');
-            const backendBase = ''; // Use relative path for Flask
-            const res = await fetch(`/api/chat`, {
-                method: 'POST',
-                headers: Object.assign(
-                    { 'Content-Type': 'application/json' },
-                    token ? { 'Authorization': `Bearer ${token}` } : {}
-                ),
-                body: JSON.stringify({ message, provider })
-            });
-            if (!res.ok) throw new Error('Network response was not ok');
-            const data = await res.json();
-            return data.reply || getAIResponse(message);
-        } catch (e) {
-            return getAIResponse(message);
+    // --- Helper for Dynamic Translations ---
+    function t(key) {
+        const lang = localStorage.getItem('selectedLanguage') || 'en';
+        return (translations[lang] && translations[lang][key]) || key;
+    }
+
+    // --- Mode Switching ---
+    function switchMode(mode) {
+        currentMode = mode;
+        if (mode === 'chat') {
+            chatModeBtn.classList.replace('btn-outline-primary', 'btn-primary');
+            voiceModeBtn.classList.replace('btn-primary', 'btn-outline-primary');
+            chatModeView.style.setProperty('display', 'flex', 'important');
+            voiceModeView.style.setProperty('display', 'none', 'important');
+            chatInputArea.style.display = 'block';
+            quickActions.style.display = 'flex';
+            stopRecording();
+        } else {
+            voiceModeBtn.classList.replace('btn-outline-primary', 'btn-primary');
+            chatModeBtn.classList.replace('btn-primary', 'btn-outline-primary');
+            voiceModeView.style.setProperty('display', 'flex', 'important');
+            chatModeView.style.setProperty('display', 'none', 'important');
+            chatInputArea.style.display = 'none';
+            quickActions.style.display = 'none';
+            
+            // Reset voice view text
+            voiceStatusText.textContent = t('voice_click_to_start');
+            voiceTranscript.textContent = "...";
+            voiceAiReplyBox.style.display = 'none';
         }
     }
 
-    const synth = window.speechSynthesis;
-    function speak(text) {
+    chatModeBtn.addEventListener('click', () => switchMode('chat'));
+    voiceModeBtn.addEventListener('click', () => switchMode('voice'));
+
+    // --- AI Communication ---
+    async function fetchAIResponse(message) {
         try {
-            if (!synth) return;
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.rate = 1;
-            utter.pitch = 1;
-            synth.speak(utter);
-        } catch {}
+            const provider = providerSelect ? providerSelect.value : 'groq';
+            const lang = localStorage.getItem('selectedLanguage') || 'en';
+            const token = localStorage.getItem('authToken');
+            
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ message, provider, lang })
+            });
+            
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            return data.reply;
+        } catch (e) {
+            console.error('Chat Error:', e);
+            // We could localize this error too, but it's a fallback
+            return "I'm having trouble connecting to my knowledge base right now. Please check your internet or try again in a moment.";
+        }
     }
-    function addMessage(text, isUser = false) {
+
+    // --- Chat Mode Logic ---
+    function addChatMessage(text, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message');
-        messageDiv.classList.add(isUser ? 'message-user' : 'message-ai');
-        messageDiv.textContent = text;
+        if (isUser) {
+            messageDiv.classList.add('message-user');
+            messageDiv.textContent = text;
+        } else {
+            messageDiv.classList.add('message-ai');
+            messageDiv.innerHTML = `
+                <div class="d-flex align-items-start gap-3">
+                    <div class="ai-icon-container"><i class="bi bi-robot"></i></div>
+                    <div class="message-content">${text}</div>
+                </div>
+            `;
+        }
         chatMessages.appendChild(messageDiv);
-        
-        // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function handleSend() {
+    async function handleChatSend() {
         const text = userInput.value.trim();
-        if (text) {
-            addMessage(text, true);
-            userInput.value = '';
-            
-            // Hide quick actions after first message
-            if (quickActions) quickActions.style.display = 'none';
+        if (!text) return;
 
-            // Show typing indicator
-            if (typingIndicator) {
-                typingIndicator.style.display = 'block';
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+        addChatMessage(text, true);
+        userInput.value = '';
+        typingIndicator.style.display = 'block';
 
-            fetchAIResponse(text).then((response) => {
-                if (typingIndicator) typingIndicator.style.display = 'none';
-                addMessage(response, false);
-                speak(response);
-            });
-        }
+        const response = await fetchAIResponse(text);
+        typingIndicator.style.display = 'none';
+        addChatMessage(response, false);
+        
+        speak(response); 
     }
 
-    // Quick Action Click
+    sendBtn.addEventListener('click', handleChatSend);
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleChatSend();
+    });
+
     if (quickActions) {
         quickActions.addEventListener('click', (e) => {
             if (e.target.classList.contains('action-chip')) {
                 userInput.value = e.target.textContent;
-                handleSend();
+                handleChatSend();
             }
         });
     }
 
-    sendBtn.addEventListener('click', handleSend);
+    // --- Voice Mode Logic ---
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
 
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSend();
-    });
+        recognition.onstart = () => {
+            isRecording = true;
+            recordingVisualizer.classList.add('is-recording');
+            voiceStatusText.textContent = t('chat_listening');
+            voiceTranscript.textContent = "...";
+            voiceAiReplyBox.style.display = 'none';
+            synth.cancel();
+        };
 
-    // Voice Input Simulation
-    let isRecording = false;
-    micBtn.addEventListener('click', () => {
-        isRecording = !isRecording;
-        if (isRecording) {
-            micBtn.classList.add('active');
-            if (recordingRing) recordingRing.style.display = 'block';
-            userInput.placeholder = "Listening...";
+        recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+                .map(result => result[0])
+                .map(result => result.transcript)
+                .join('');
+            voiceTranscript.textContent = transcript;
             
-            // Simulate voice recognition after 3 seconds
-            setTimeout(() => {
-                if (isRecording) {
-                    isRecording = false;
-                    micBtn.classList.remove('active');
-                    if (recordingRing) recordingRing.style.display = 'none';
-                    userInput.placeholder = "Type your message here...";
-                    userInput.value = "I'm feeling a bit anxious today";
-                    handleSend();
-                }
-            }, 3000);
+            if (event.results[0].isFinal) {
+                stopRecording();
+                handleVoiceInput(transcript);
+            }
+        };
+
+        recognition.onerror = (e) => {
+            console.error('Speech Error:', e);
+            stopRecording();
+            voiceStatusText.textContent = "Error occurred";
+        };
+
+        recognition.onend = () => {
+            stopRecording();
+        };
+    }
+
+    function stopRecording() {
+        if (isRecording) {
+            recognition.stop();
+            isRecording = false;
+            recordingVisualizer.classList.remove('is-recording');
+            voiceStatusText.textContent = t('voice_click_to_start');
+        }
+    }
+
+    voiceMicBtn.addEventListener('click', () => {
+        if (!recognition) {
+            alert("Speech recognition is not supported in this browser.");
+            return;
+        }
+        if (isRecording) {
+            stopRecording();
         } else {
-            micBtn.classList.remove('active');
-            if (recordingRing) recordingRing.style.display = 'none';
-            userInput.placeholder = "Type your message here...";
+            const currentLang = localStorage.getItem('selectedLanguage') || 'en';
+            const langMap = { 'en': 'en-US', 'hi': 'hi-IN', 'mr': 'mr-IN' };
+            recognition.lang = langMap[currentLang] || 'en-US';
+            recognition.start();
         }
     });
 
-    // Check for voice mode in URL
+    async function handleVoiceInput(text) {
+        if (!text) return;
+        
+        voiceStatusText.textContent = "...";
+        typingIndicator.style.display = 'block';
+        
+        const response = await fetchAIResponse(text);
+        
+        typingIndicator.style.display = 'none';
+        voiceStatusText.textContent = ""; 
+        voiceAiReply.textContent = response;
+        voiceAiReplyBox.style.display = 'block';
+        
+        speak(response);
+    }
+
+    function speak(text) {
+        if (!synth || !text) return;
+        
+        // Stop any current speaking
+        synth.cancel();
+
+        const utter = new SpeechSynthesisUtterance(text);
+        const currentLang = localStorage.getItem('selectedLanguage') || 'en';
+        
+        // Map our language codes to TTS locales
+        const langMap = {
+            'en': 'en-US',
+            'hi': 'hi-IN',
+            'mr': 'hi-IN' // Marathi often works better with Hindi TTS if Marathi isn't available
+        };
+        
+        utter.lang = langMap[currentLang] || 'en-US';
+        
+        // Try to find a native-sounding voice
+        const voices = synth.getVoices();
+        const preferredVoice = voices.find(v => v.lang.startsWith(utter.lang) && v.name.includes('Google'));
+        if (preferredVoice) utter.voice = preferredVoice;
+
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        
+        utter.onend = () => {
+            if (currentMode === 'voice') {
+                voiceStatusText.textContent = "Click to start speaking";
+            }
+        };
+        
+        synth.speak(utter);
+    }
+
+    // --- URL Mode Handling ---
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('mode') === 'voice') {
-        setTimeout(() => {
-            micBtn.click();
-        }, 500);
+        switchMode('voice');
     }
 });

@@ -1,109 +1,138 @@
 import os
-import mysql.connector
-from mysql.connector import Error
+import sys
+import json
+from pymongo import MongoClient
+from datetime import datetime
 
-def get_conn():
+# MongoDB Connection Setup
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/")
+MONGO_DB = os.getenv("MONGO_DB", "mindcare_db")
+
+# Fallback JSON File
+JSON_DB_FILE = "local_db.json"
+
+_client = None
+_use_json_fallback = False
+
+def _load_json_db():
+    if not os.path.exists(JSON_DB_FILE):
+        return {"users": [], "chat_logs": []}
     try:
-        return mysql.connector.connect(
-            host=os.getenv("MYSQL_HOST", "127.0.0.1"),
-            port=int(os.getenv("MYSQL_PORT", "3306")),
-            user=os.getenv("MYSQL_USER", "root"),
-            password=os.getenv("MYSQL_PASSWORD", "vinay"),
-            database=os.getenv("MYSQL_DB", "rm"),
-        )
-    except Error:
-        return None
+        with open(JSON_DB_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {"users": [], "chat_logs": []}
+
+def _save_json_db(data):
+    try:
+        with open(JSON_DB_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print(f"DEBUG: Error saving JSON DB: {e}")
+
+def get_client():
+    global _client, _use_json_fallback
+    if _client is None and not _use_json_fallback:
+        try:
+            _client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000, connectTimeoutMS=2000)
+            # Test connection immediately
+            _client.admin.command('ping')
+            print("DEBUG: Connected to MongoDB successfully.")
+        except Exception:
+            print("DEBUG: MongoDB not found. Switching to Local JSON Fallback.")
+            _use_json_fallback = True
+            _client = None
+    return _client
+
+def check_connection():
+    # If we are using JSON fallback, we are "connected" to our local file
+    if _use_json_fallback:
+        return True
+    client = get_client()
+    if not client:
+        return _use_json_fallback # True if fallback is active
+    try:
+        client.admin.command('ping')
+        return True
+    except Exception:
+        return False
 
 def ensure_schema():
-    conn = get_conn()
-    if not conn:
+    if _use_json_fallback:
         return
+    client = get_client()
+    if not client: return
     try:
-        cur = conn.cursor()
-        cur.execute(
-            "CREATE TABLE IF NOT EXISTS chat_logs ("
-            "id INT AUTO_INCREMENT PRIMARY KEY, "
-            "ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-            "role VARCHAR(16) NOT NULL, "
-            "content TEXT NOT NULL)"
-        )
-        cur.execute(
-            "CREATE TABLE IF NOT EXISTS users ("
-            "id INT AUTO_INCREMENT PRIMARY KEY, "
-            "email VARCHAR(255) UNIQUE NOT NULL, "
-            "password_hash VARCHAR(255) NOT NULL, "
-            "name VARCHAR(255) NOT NULL, "
-            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
-        )
-        conn.commit()
-    finally:
-        try:
-            cur.close()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
+        db = client[MONGO_DB]
+        db.users.create_index("email", unique=True)
+        db.chat_logs.create_index("ts")
+    except Exception:
+        pass
 
 def save_log(role: str, content: str):
-    conn = get_conn()
-    if not conn:
+    if _use_json_fallback:
+        data = _load_json_db()
+        data["chat_logs"].append({
+            "role": role,
+            "content": content,
+            "ts": datetime.utcnow().isoformat()
+        })
+        _save_json_db(data)
         return
+
+    client = get_client()
+    if not client: return
     try:
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO chat_logs (role, content) VALUES (%s, %s)",
-            (role, content),
-        )
-        conn.commit()
-    finally:
-        try:
-            cur.close()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
+        db = client[MONGO_DB]
+        log_entry = {"role": role, "content": content, "ts": datetime.utcnow()}
+        db.chat_logs.insert_one(log_entry)
+    except Exception:
+        pass
 
 def get_user_by_email(email: str):
-    conn = get_conn()
-    if not conn:
+    if _use_json_fallback:
+        data = _load_json_db()
+        for user in data["users"]:
+            if user["email"] == email:
+                # Add mock _id for JWT consistency
+                user["_id"] = user.get("email")
+                return user
         return None
+
+    client = get_client()
+    if not client: return None
     try:
-        cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT id, email, password_hash, name FROM users WHERE email=%s", (email,))
-        row = cur.fetchone()
-        return row
-    finally:
-        try:
-            cur.close()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
+        db = client[MONGO_DB]
+        return db.users.find_one({"email": email})
+    except Exception:
+        return None
 
 def create_user(email: str, password_hash: str, name: str):
-    conn = get_conn()
-    if not conn:
-        return None
+    if _use_json_fallback:
+        data = _load_json_db()
+        if any(u["email"] == email for u in data["users"]):
+            return None
+        new_user = {
+            "email": email,
+            "password_hash": password_hash,
+            "name": name,
+            "created_at": datetime.utcnow().isoformat()
+        }
+        data["users"].append(new_user)
+        _save_json_db(data)
+        return email
+
+    client = get_client()
+    if not client: return None
     try:
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO users (email, password_hash, name) VALUES (%s, %s, %s)",
-            (email, password_hash, name),
-        )
-        conn.commit()
-        return cur.lastrowid
-    finally:
-        try:
-            cur.close()
-        except Exception:
-            pass
-        try:
-            conn.close()
-        except Exception:
-            pass
+        db = client[MONGO_DB]
+        user_data = {
+            "email": email,
+            "password_hash": password_hash,
+            "name": name,
+            "created_at": datetime.utcnow()
+        }
+        result = db.users.insert_one(user_data)
+        return str(result.inserted_id)
+    except Exception:
+        return None

@@ -1,115 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Features - MindCare Navigator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">MindCare Navigator</a>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">About</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('features') }}">Features</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('chat') }}">Start Chat</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('contact') }}">Support</a></li>
-                </ul>
-            </div>
+{% block title %}Features - MindCare Navigator{% endblock %}
+
+{% block content %}
+<section class="py-5" style="background: radial-gradient(circle at top left, #e8f5e9, transparent);">
+    <div class="container">
+        <div class="text-center mb-5 fade-in-up">
+            <h1 class="display-5 fw-bold" style="background: var(--grad-calm); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-t="features_title">System Features</h1>
+            <p class="lead text-muted" data-t="features_subtitle">Advanced technology, human-centered design.</p>
         </div>
-    </nav>
 
-    <main class="py-5" style="background: radial-gradient(circle at top left, #e8f5e9, transparent);">
-        <div class="container">
-            <div class="text-center mb-5 fade-in-up">
-                <h1 class="display-5 fw-bold" style="background: var(--grad-calm); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">System Features</h1>
-                <p class="lead text-muted">Advanced technology, human-centered design.</p>
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.1s;">
+                <div class="card glass-card h-100">
+                    <div class="feature-icon bg-soft-blue">
+                        <i class="bi bi-mic-fill"></i>
+                    </div>
+                    <h4 class="fw-bold" data-t="feat_voice_h">Voice + Chat Interaction</h4>
+                    <p class="text-muted" data-t="feat_voice_p">Choose how you want to communicate. Our voice-enabled interface makes support accessible for those who prefer speaking over typing.</p>
+                </div>
             </div>
 
-            <div class="row g-4">
-                <!-- Feature 1 -->
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.1s;">
-                    <div class="card h-100">
-                        <div class="feature-icon bg-soft-blue">
-                            <i class="bi bi-mic-fill"></i>
-                        </div>
-                        <h4 class="fw-bold">Voice + Chat Interaction</h4>
-                        <p class="text-muted">Choose how you want to communicate. Our voice-enabled interface makes support accessible for those who prefer speaking over typing.</p>
+            <!-- Feature 2 -->
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
+                <div class="card glass-card h-100">
+                    <div class="feature-icon bg-soft-green">
+                        <i class="bi bi-database-check"></i>
                     </div>
+                    <h4 class="fw-bold" data-t="feat_rag_h">RAG-Based Safety</h4>
+                    <p class="text-muted" data-t="feat_rag_p">Retrieval-Augmented Generation ensures our AI provides responses grounded in expert-validated mental health knowledge.</p>
                 </div>
+            </div>
 
-                <!-- Feature 2 -->
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
-                    <div class="card h-100">
-                        <div class="feature-icon bg-soft-green">
-                            <i class="bi bi-database-check"></i>
-                        </div>
-                        <h4 class="fw-bold">RAG-Based Safety</h4>
-                        <p class="text-muted">Retrieval-Augmented Generation ensures our AI provides responses grounded in expert-validated mental health knowledge.</p>
+            <!-- Feature 3 -->
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
+                <div class="card glass-card h-100">
+                    <div class="feature-icon bg-soft-purple">
+                        <i class="bi bi-geo-alt-fill"></i>
                     </div>
+                    <h4 class="fw-bold" data-t="feat_region_h">Region-Specific Resources</h4>
+                    <p class="text-muted" data-t="feat_region_p">Get connected to mental health resources, helplines, and clinics specific to your geographic location.</p>
                 </div>
+            </div>
 
-                <!-- Feature 3 -->
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
-                    <div class="card h-100">
-                        <div class="feature-icon bg-soft-purple">
-                            <i class="bi bi-geo-alt-fill"></i>
-                        </div>
-                        <h4 class="fw-bold">Region-Specific Resources</h4>
-                        <p class="text-muted">Get connected to mental health resources, helplines, and clinics specific to your geographic location.</p>
+            <!-- Feature 4 -->
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.4s;">
+                <div class="card glass-card h-100">
+                    <div class="feature-icon bg-soft-blue">
+                        <i class="bi bi-reception-2"></i>
                     </div>
+                    <h4 class="fw-bold" data-t="feat_low_h">Low-Bandwidth Friendly</h4>
+                    <p class="text-muted" data-t="feat_low_p">Optimized for areas with limited internet connectivity, ensuring the system remains responsive on all networks.</p>
                 </div>
+            </div>
 
-                <!-- Feature 4 -->
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.4s;">
-                    <div class="card h-100">
-                        <div class="feature-icon bg-soft-blue">
-                            <i class="bi bi-reception-2"></i>
-                        </div>
-                        <h4 class="fw-bold">Low-Bandwidth Friendly</h4>
-                        <p class="text-muted">Optimized for areas with limited internet connectivity, ensuring the system remains responsive on all networks.</p>
+            <!-- Feature 5 -->
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.5s;">
+                <div class="card glass-card h-100">
+                    <div class="feature-icon bg-soft-green">
+                        <i class="bi bi-lock-fill"></i>
                     </div>
+                    <h4 class="fw-bold" data-t="feat_privacy_h">Privacy-Focused</h4>
+                    <p class="text-muted" data-t="feat_privacy_p">Your conversations are private and secure. We use industry-standard encryption to protect your data and identity.</p>
                 </div>
+            </div>
 
-                <!-- Feature 5 -->
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.5s;">
-                    <div class="card h-100">
-                        <div class="feature-icon bg-soft-green">
-                            <i class="bi bi-lock-fill"></i>
-                        </div>
-                        <h4 class="fw-bold">Privacy-Focused</h4>
-                        <p class="text-muted">Your conversations are private and secure. We use industry-standard encryption to protect your data and identity.</p>
+            <!-- Feature 6 -->
+            <div class="col-md-4 fade-in-up" style="animation-delay: 0.6s;">
+                <div class="card glass-card h-100">
+                    <div class="feature-icon bg-soft-purple">
+                        <i class="bi bi-heart-pulse-fill"></i>
                     </div>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="col-md-4 fade-in-up" style="animation-delay: 0.6s;">
-                    <div class="card h-100">
-                        <div class="feature-icon bg-soft-purple">
-                            <i class="bi bi-heart-pulse-fill"></i>
-                        </div>
-                        <h4 class="fw-bold">Non-Diagnostic Support</h4>
-                        <p class="text-muted">A dedicated focus on emotional support and navigation rather than clinical diagnosis or medical treatment.</p>
-                    </div>
+                    <h4 class="fw-bold" data-t="feat_non_h">Non-Diagnostic Support</h4>
+                    <p class="text-muted" data-t="feat_non_p">A dedicated focus on emotional support and navigation rather than clinical diagnosis or medical treatment.</p>
                 </div>
             </div>
         </div>
-    </main>
-
-    <footer class="footer">
-        <div class="container text-center">
-            <p class="disclaimer">Disclaimer: MindCare Navigator does not provide medical diagnosis or therapy.</p>
-            <p class="text-muted">&copy; 2026 MindCare Navigator. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    </div>
+</section>
+{% endblock %}

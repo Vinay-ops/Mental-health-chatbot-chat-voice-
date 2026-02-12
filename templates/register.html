@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Register - MindCare Navigator{% endblock %}
+
+{% block content %}
+<section class="auth-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card glass-card border-0 shadow-sm p-4">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold" data-t="register_title">Create Account</h2>
+                        <p class="text-muted" data-t="register_subtitle">Join MindCare for personalized support</p>
+                    </div>
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="name" class="form-label" data-t="register_name">Full Name</label>
+                            <input type="text" class="form-control" id="name" placeholder="John Doe" data-t="register_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label" data-t="register_email">Email Address</label>
+                            <input type="email" class="form-control" id="email" placeholder="name@example.com" data-t="register_email" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label" data-t="register_password">Password</label>
+                            <input type="password" class="form-control" id="password" placeholder="••••••••" data-t="register_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 mb-3" data-t="register_btn">Register</button>
+                    </form>
+                    <div class="text-center">
+                        <p class="mb-0 text-muted"><span data-t="register_footer">Already have an account?</span> <a href="{{ url_for('login_page') }}" class="text-primary fw-semibold" data-t="register_link">Sign in here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            localStorage.setItem('authToken', data.token);
+            window.location.href = '/chat';
+        } else {
+            alert(data.error || 'Registration failed');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Something went wrong. Please try again.');
+    }
+});
+</script>
+{% endblock %}
