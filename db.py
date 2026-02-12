@@ -34,18 +34,17 @@ def _save_json_db(data):
 
 def get_db_connection():
     global _use_json_fallback
-    if _use_json_fallback:
-        return None
     try:
         conn = mysql.connector.connect(
             host=MYSQL_HOST,
             user=MYSQL_USER,
             password=MYSQL_PASSWORD,
             database=MYSQL_DATABASE,
-            connect_timeout=2
+            connect_timeout=5
         )
         return conn
     except mysql.connector.Error as err:
+        print(f"DEBUG: MySQL Connection Error: {err}")
         if err.errno == errorcode.ER_BAD_DB_ERROR:
             # Try connecting without database to create it
             try:
@@ -63,32 +62,40 @@ def get_db_connection():
                     password=MYSQL_PASSWORD,
                     database=MYSQL_DATABASE
                 )
-            except Exception:
+            except Exception as e:
+                print(f"DEBUG: Failed to create database: {e}")
                 _use_json_fallback = True
                 return None
         else:
-            print(f"DEBUG: MySQL error: {err}. Switching to Local JSON Fallback.")
+            # For other errors, we might want to fallback but let's see
+            # If it's a transient error, we shouldn't permanently switch to fallback
+            # But for now, let's keep it as is but with better logging
+            print(f"DEBUG: Switching to Local JSON Fallback for this session.")
             _use_json_fallback = True
             return None
 
 _connection_checked = False
 
 def check_connection():
-    global _connection_checked
-    if _connection_checked or _use_json_fallback:
+    global _connection_checked, _use_json_fallback
+    if _connection_checked:
         return True
+    
     conn = get_db_connection()
     if conn:
         conn.close()
         _connection_checked = True
+        _use_json_fallback = False
         return True
+    
+    # If get_db_connection failed, _use_json_fallback is already True
     return _use_json_fallback
 
 def ensure_schema():
-    if _use_json_fallback:
-        return
     conn = get_db_connection()
-    if not conn: return
+    if not conn: 
+        print("DEBUG: Cannot ensure schema - no connection.")
+        return
     try:
         cursor = conn.cursor()
         # Users table
@@ -116,24 +123,34 @@ def ensure_schema():
         conn.commit()
         cursor.close()
         conn.close()
+        print("DEBUG: Database schema ensured.")
     except Exception as e:
         print(f"DEBUG: Schema error: {e}")
 
 def save_log(role: str, content: str, user_id: str = None, session_id: str = None):
     if _use_json_fallback:
-        data = _load_json_db()
-        data["chat_logs"].append({
-            "role": role,
-            "content": content,
-            "user_id": str(user_id) if user_id else None,
-            "session_id": session_id,
-            "ts": datetime.utcnow().isoformat()
-        })
-        _save_json_db(data)
-        return
+        try:
+            data = _load_json_db()
+            data["chat_logs"].append({
+                "role": role,
+                "content": content,
+                "user_id": str(user_id) if user_id else None,
+                "session_id": session_id,
+                "ts": datetime.utcnow().isoformat()
+            })
+            _save_json_db(data)
+            return
+        except Exception as e:
+            print(f"DEBUG: Error saving to JSON: {e}")
+            return
 
     conn = get_db_connection()
-    if not conn: return
+    if not conn: 
+        # If MySQL failed, try saving to JSON as fallback
+        _use_json_fallback = True
+        save_log(role, content, user_id, session_id)
+        return
+
     try:
         cursor = conn.cursor()
         cursor.execute(
@@ -144,22 +161,31 @@ def save_log(role: str, content: str, user_id: str = None, session_id: str = Non
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"DEBUG: Error saving log: {e}")
+        print(f"DEBUG: Error saving log to MySQL: {e}")
+        # Try JSON as last resort
+        _use_json_fallback = True
+        save_log(role, content, user_id, session_id)
 
 def get_chat_history(user_id: str, session_id: str):
     if _use_json_fallback:
         data = _load_json_db()
         return [log for log in data["chat_logs"] 
-                if log.get("user_id") == str(user_id) and log.get("session_id") == session_id]
+                if log.get("user_id") == (str(user_id) if user_id else None) and log.get("session_id") == session_id]
 
     conn = get_db_connection()
     if not conn: return []
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id = %s AND session_id = %s ORDER BY ts ASC",
-            (str(user_id), session_id)
-        )
+        if user_id:
+            cursor.execute(
+                "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id = %s AND session_id = %s ORDER BY ts ASC",
+                (str(user_id), session_id)
+            )
+        else:
+            cursor.execute(
+                "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id IS NULL AND session_id = %s ORDER BY ts ASC",
+                (session_id,)
+            )
         history = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -173,7 +199,7 @@ def get_user_sessions(user_id: str):
         data = _load_json_db()
         sessions = set()
         for log in data["chat_logs"]:
-            if log.get("user_id") == str(user_id) and log.get("session_id"):
+            if log.get("user_id") == (str(user_id) if user_id else None) and log.get("session_id"):
                 sessions.add(log["session_id"])
         return sorted(list(sessions), reverse=True)
 
@@ -181,10 +207,16 @@ def get_user_sessions(user_id: str):
     if not conn: return []
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT session_id FROM chat_logs WHERE user_id = %s AND session_id IS NOT NULL GROUP BY session_id ORDER BY MAX(ts) DESC",
-            (str(user_id),)
-        )
+        if user_id:
+            cursor.execute(
+                "SELECT session_id FROM chat_logs WHERE user_id = %s AND session_id IS NOT NULL GROUP BY session_id ORDER BY MAX(ts) DESC",
+                (str(user_id),)
+            )
+        else:
+            cursor.execute(
+                "SELECT session_id FROM chat_logs WHERE user_id IS NULL AND session_id IS NOT NULL GROUP BY session_id ORDER BY MAX(ts) DESC",
+                (session_id,)
+            )
         sessions = [row[0] for row in cursor.fetchall()]
         cursor.close()
         conn.close()

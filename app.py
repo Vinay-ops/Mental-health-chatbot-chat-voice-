@@ -282,27 +282,17 @@ def chat_api():
         session_memory[session_id] = []
         # ALWAYS try to pull history from DB if session exists but memory is empty (e.g. server restart)
         if db.check_connection():
-            # If user_id is missing, we still try to get history by session_id if possible
-            # But the DB query requires user_id. For now, let's optimize user-linked sessions.
-            if user_id:
-                db_history = db.get_chat_history(user_id, session_id)
-                for h in db_history:
-                    # Append in order: user -> assistant -> user...
-                    session_memory[session_id].append(h['content'])
-            else:
-                # If guest, we don't have user_id to query DB safely yet
-                # In a future update, we could allow querying guest sessions by ID alone
-                pass
+            db_history = db.get_chat_history(user_id, session_id)
+            for h in db_history:
+                # Store as tuple (role, content)
+                role_name = "User" if h['role'] == 'user' else "Assistant"
+                session_memory[session_id].append((role_name, h['content']))
     
     # Get last 10 messages for context (increased from 5 to 10 for better memory)
     history = session_memory[session_id][-10:]
     history_context = ""
-    for i, m in enumerate(history):
-        # Determine role based on position in history (assuming alternating User/Assistant)
-        # However, to be safer, we should store roles in session_memory too.
-        # For now, we'll use a simpler heuristic or just send the text blocks.
-        role = "User" if (len(history) - i) % 2 != 0 else "Assistant"
-        history_context += f"{role}: {m}\n"
+    for role_name, content in history:
+        history_context += f"{role_name}: {content}\n"
     
     # Combined Prompt for Reply and Sentiment
     lang_instruction = f" Respond in {lang.upper()} language."
@@ -358,8 +348,8 @@ def chat_api():
     session_sentiment[session_id] = sentiment
         
     # Save to memory
-    session_memory[session_id].append(message)
-    session_memory[session_id].append(reply)
+    session_memory[session_id].append(("User", message))
+    session_memory[session_id].append(("Assistant", reply))
     if len(session_memory[session_id]) > 20:
         session_memory[session_id] = session_memory[session_id][-20:]
 
