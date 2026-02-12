@@ -75,7 +75,7 @@
 
                         <!-- Voice Mode View -->
                         <div id="voice-mode-view" class="h-100 d-flex flex-column align-items-center p-3 p-md-5 text-center" style="display: none !important; background: transparent; overflow-y: auto;">
-                            <div class="voice-status mb-4 mt-2 mt-md-4">
+                            <div class="voice-status mb-5 mt-2 mt-md-4 w-100">
                                 <div class="recording-visualizer mb-5">
                                     <div class="pulse-ring"></div>
                                     <div class="pulse-ring delay-1"></div>
@@ -83,18 +83,22 @@
                                         <i class="bi bi-mic-fill"></i>
                                     </div>
                                 </div>
-                                <h3 class="fw-bold text-gradient mb-2 px-3 h2" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
-                                <p class="text-muted px-3 lead" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
+                                <h3 class="fw-bold text-gradient mb-3 px-3 h2" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
+                                <p class="text-muted px-3 lead mb-0" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
                             </div>
                             
-                            <div class="transcript-box p-4 glass-card shadow-lg w-100 mb-4 border-0" style="max-width: 600px; min-height: 120px; background: rgba(255,255,255,0.5) !important;">
-                                <p class="text-primary mb-2 small fw-bold text-uppercase" data-t="voice_you_said">You said:</p>
-                                <div id="voice-transcript" class="fs-4 text-dark fw-medium" style="word-break: break-word;">...</div>
+                            <div class="transcript-box p-4 p-md-5 glass-card shadow-lg w-100 mb-5 border-0 position-relative" style="max-width: 650px; min-height: 140px; background: rgba(255,255,255,0.8) !important; transition: all 0.3s ease;">
+                                <div class="position-absolute top-0 start-50 translate-middle bg-white px-3 py-1 rounded-pill shadow-sm border">
+                                    <span class="text-primary small fw-bold text-uppercase tracking-wider" style="font-size: 0.7rem;" data-t="voice_you_said">You said</span>
+                                </div>
+                                <div id="voice-transcript" class="fs-4 text-dark fw-medium mt-2" style="word-break: break-word; line-height: 1.6;">...</div>
                             </div>
                             
-                            <div class="ai-reply-box p-4 rounded-5 shadow-2xl w-100 mb-4 border-0" style="max-width: 600px; display: none; background: linear-gradient(135deg, var(--primary), var(--secondary));" id="voice-ai-reply-box">
-                                <p class="text-white-50 mb-2 small fw-bold text-uppercase" data-t="voice_assistant_reply">Assistant:</p>
-                                <div id="voice-ai-reply" class="fs-4 text-white fw-medium" style="word-break: break-word;">...</div>
+                            <div class="ai-reply-box p-4 p-md-5 rounded-5 shadow-2xl w-100 mb-5 border-0 position-relative" style="max-width: 650px; display: none; background: linear-gradient(135deg, var(--primary), var(--secondary)); transition: all 0.3s ease;" id="voice-ai-reply-box">
+                                <div class="position-absolute top-0 start-50 translate-middle bg-white px-3 py-1 rounded-pill shadow-sm border">
+                                    <span class="text-primary small fw-bold text-uppercase tracking-wider" style="font-size: 0.7rem;" data-t="voice_assistant_reply">Assistant</span>
+                                </div>
+                                <div id="voice-ai-reply" class="fs-4 text-white fw-medium mt-2" style="word-break: break-word; line-height: 1.6;">...</div>
                             </div>
                         </div>
 
@@ -184,6 +188,7 @@
 }
 .history-date { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .history-preview { font-size: 0.85rem; color: var(--text-main); font-weight: 500; }
+.tracking-wider { letter-spacing: 0.05em; }
 </style>
 
 <style>

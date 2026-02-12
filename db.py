@@ -8,8 +8,8 @@ from datetime import datetime
 # MySQL Connection Setup
 MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
 MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "vinay")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "rm")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "")
 
 # Fallback JSON File
 JSON_DB_FILE = "local_db.json"
