@@ -305,6 +305,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Voice Mode Logic ---
+    let voices = [];
+    function loadVoices() {
+        voices = synth.getVoices();
+    }
+    loadVoices();
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
@@ -406,33 +415,46 @@ document.addEventListener('DOMContentLoaded', () => {
         // Stop any current speaking
         synth.cancel();
 
+        // Create a new utterance
         const utter = new SpeechSynthesisUtterance(text);
         const currentLang = localStorage.getItem('selectedLanguage') || 'en';
         
-        // Map our language codes to TTS locales
         const langMap = {
             'en': 'en-US',
             'hi': 'hi-IN',
-            'mr': 'hi-IN' // Marathi often works better with Hindi TTS if Marathi isn't available
+            'mr': 'hi-IN' 
         };
         
-        utter.lang = langMap[currentLang] || 'en-US';
+        const targetLang = langMap[currentLang] || 'en-US';
+        utter.lang = targetLang;
         
-        // Try to find a native-sounding voice
-        const voices = synth.getVoices();
-        const preferredVoice = voices.find(v => v.lang.startsWith(utter.lang) && v.name.includes('Google'));
-        if (preferredVoice) utter.voice = preferredVoice;
+        // Try to find the best voice
+        if (voices.length === 0) loadVoices();
+        
+        // Find voice for specific language
+        let voice = voices.find(v => v.lang === targetLang || v.lang.replace('_', '-') === targetLang);
+        
+        // Preference: Google or Natural sounding voices
+        const premiumVoice = voices.find(v => (v.lang === targetLang || v.lang.replace('_', '-') === targetLang) && 
+                                              (v.name.includes('Google') || v.name.includes('Natural')));
+        
+        if (premiumVoice) voice = premiumVoice;
+        if (voice) utter.voice = voice;
 
         utter.rate = 1.0;
         utter.pitch = 1.0;
+        utter.volume = 1.0;
         
         utter.onend = () => {
             if (currentMode === 'voice') {
                 voiceStatusText.textContent = t('voice_click_to_start');
             }
         };
-        
-        synth.speak(utter);
+
+        // Crucial fix for Chrome: call speak after a tiny delay
+        setTimeout(() => {
+            synth.speak(utter);
+        }, 50);
     }
 
     // --- URL Mode Handling ---

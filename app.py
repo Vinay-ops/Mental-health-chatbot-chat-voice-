@@ -184,57 +184,36 @@ def _groq_reply(message: str, system_prompt: str) -> str:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
-        # Try a few different models just in case
-        for model in ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"]:
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": message}
-                ],
-                "temperature": 0.5,
-                "max_tokens": 1024
-            }
-            r = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=15)
+    # Try a few different models just in case
+    for model in ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"]:
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "temperature": 0.5,
+            "max_tokens": 1024
+        }
+        try:
+            r = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=8)
             j = r.json()
             if "choices" in j:
                 return j.get("choices", [{}])[0].get("message", {}).get("content", None)
             else:
                 print(f"DEBUG: Groq {model} failed: {j.get('error', {}).get('message')}")
-        return None
+        except requests.exceptions.Timeout:
+            print(f"DEBUG: Groq {model} timed out. Trying next...")
+            continue
+        except Exception as e:
+            print(f"DEBUG: Groq {model} error: {e}")
+            continue
+    return None
     except Exception as e:
         print(f"Groq Exception: {e}")
         return None
 
-def _analyze_sentiment(message: str) -> str:
-    """Analyze the sentiment of a message using Groq/Gemini for speed."""
-    api_key = os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return "neutral"
-        
-    prompt = (
-        "Analyze the emotional sentiment of the following message. "
-        "Respond with ONLY one word from this list: [happy, sad, anxious, angry, calm, neutral]. "
-        f"Message: {message}"
-    )
-    
-    # Try Groq first for speed
-    if os.getenv("GROQ_API_KEY"):
-        res = _groq_reply(prompt, "You are a sentiment analyzer.")
-        if res:
-            res = res.lower().strip().replace(".", "")
-            if res in ["happy", "sad", "anxious", "angry", "calm", "neutral"]:
-                return res
-                
-    # Fallback to Gemini
-    if os.getenv("GEMINI_API_KEY"):
-        res = _gemini_reply(prompt, "You are a sentiment analyzer.")
-        if res:
-            res = res.lower().strip().replace(".", "")
-            if res in ["happy", "sad", "anxious", "angry", "calm", "neutral"]:
-                return res
-                
-    return "neutral"
+# --- Removed standalone _analyze_sentiment to favor combined prompt optimization ---
 
 # --- Routes ---
 
@@ -292,43 +271,40 @@ def chat_api():
 
     print(f"DEBUG: Chat request - provider: {provider}, lang: {lang}, session: {session_id}, user: {user_id}")
     
-    # 1. Sentiment Analysis
-    sentiment = _analyze_sentiment(message)
-    session_sentiment[session_id] = sentiment
+    # 1. Sentiment Analysis (Optimization: We derive sentiment in the same call)
+    # sentiment = "neutral" # Default
+    # if len(message) < 500: 
+    #     sentiment = _analyze_sentiment(message)
+    # session_sentiment[session_id] = sentiment
     
     # 2. Memory Management
     if session_id not in session_memory:
         session_memory[session_id] = []
-        # If logged in, try to load last 5 messages from DB for context if memory is empty
         if user_id and db.check_connection():
             db_history = db.get_chat_history(user_id, session_id)
-            for h in db_history[-10:]: # Last 10 roles/contents
+            for h in db_history[-10:]:
                 session_memory[session_id].append(h['content'])
     
-    # Get last 5 messages for context (which is 10 items in session_memory: user/assistant pairs)
+    # Get last 5 messages for context
     history = session_memory[session_id][-10:]
     history_context = ""
     for i, m in enumerate(history):
         role = "User" if (len(history) - i) % 2 != 0 else "Assistant"
-        # Wait, the logic above is slightly flawed if we don't know who started. 
-        # Better to store role in session_memory too or just use the last few.
         history_context += f"{role}: {m}\n"
     
-    # Update system prompt
-    mood_prompts = {
-        "happy": " The user seems to be in a good mood. Match their energy with positivity!",
-        "sad": " The user seems sad. Be extra gentle, patient, and supportive.",
-        "anxious": " The user seems anxious. Use calming, grounding language.",
-        "angry": " The user seems frustrated or angry. Remain calm, de-escalating, and validating.",
-        "calm": " The user is calm. Maintain a steady, peaceful dialogue.",
-        "neutral": ""
-    }
-    
+    # Combined Prompt for Reply and Sentiment
     lang_instruction = f" Respond in {lang.upper()} language."
     if lang == 'hi': lang_instruction = " Respond strictly in HINDI (हिन्दी) language."
     elif lang == 'mr': lang_instruction = " Respond strictly in MARATHI (मराठी) language."
         
-    current_system_prompt = SAFE_SYSTEM_PROMPT + lang_instruction + mood_prompts.get(sentiment, "")
+    current_system_prompt = (
+        SAFE_SYSTEM_PROMPT + lang_instruction + 
+        "\nIMPORTANT: Your response MUST start with the detected sentiment of the user's message in this exact format: "
+        "[MOOD: sentiment_name] followed by your actual response. "
+        "Choose sentiment_name from: [happy, sad, anxious, angry, calm, neutral]. "
+        "Example: '[MOOD: calm] I am glad you are feeling peaceful...'"
+    )
+    
     full_prompt_message = f"Recent History:\n{history_context}\n\nUser: {message}" if history_context else message
     
     if not provider:
@@ -337,23 +313,37 @@ def chat_api():
     # Save user message to DB
     try:
         if db.check_connection():
-            db.ensure_schema()
             db.save_log("user", message, user_id=user_id, session_id=session_id)
     except Exception:
         pass
         
-    reply = None
+    raw_reply = None
     if provider == "groq":
-        reply = _groq_reply(full_prompt_message, current_system_prompt)
+        raw_reply = _groq_reply(full_prompt_message, current_system_prompt)
     elif provider == "gemini":
-        reply = _gemini_reply(full_prompt_message, current_system_prompt)
+        raw_reply = _gemini_reply(full_prompt_message, current_system_prompt)
     elif provider == "grok":
-        reply = _grok_reply(full_prompt_message, current_system_prompt)
+        raw_reply = _grok_reply(full_prompt_message, current_system_prompt)
     elif provider == "ollama":
-        reply = _ollama_reply(full_prompt_message, current_system_prompt)
+        raw_reply = _ollama_reply(full_prompt_message, current_system_prompt)
     
-    if not reply:
-        reply = _fallback_response(message)
+    if not raw_reply:
+        raw_reply = _fallback_response(message)
+        
+    # Parse sentiment and reply
+    sentiment = "neutral"
+    reply = raw_reply
+    if "[MOOD:" in raw_reply:
+        try:
+            parts = raw_reply.split("]", 1)
+            mood_tag = parts[0].replace("[MOOD:", "").strip().lower()
+            if mood_tag in ["happy", "sad", "anxious", "angry", "calm", "neutral"]:
+                sentiment = mood_tag
+            reply = parts[1].strip()
+        except Exception:
+            pass
+            
+    session_sentiment[session_id] = sentiment
         
     # Save to memory
     session_memory[session_id].append(message)
@@ -415,7 +405,6 @@ def register():
     if not db.check_connection():
         return jsonify({"error": "Database error. Please try again later."}), 503
 
-    db.ensure_schema()
     existing = db.get_user_by_email(email)
     if existing:
         return jsonify({"error": "Email already registered"}), 400
@@ -439,7 +428,6 @@ def login():
     if not db.check_connection():
         return jsonify({"error": "Database error. Please try again later."}), 503
 
-    db.ensure_schema()
     user = db.get_user_by_email(email)
     if not user or not _verify_password(password, user["password_hash"]):
         return jsonify({"error": "Invalid credentials"}), 401
@@ -464,4 +452,12 @@ def contact_api():
     return jsonify({"success": "Message sent successfully"})
 
 if __name__ == '__main__':
+    # Initialize DB Schema once at startup
+    try:
+        if db.check_connection():
+            db.ensure_schema()
+            print("DEBUG: Database schema verified.")
+    except Exception as e:
+        print(f"DEBUG: Schema initialization failed: {e}")
+        
     app.run(debug=True, port=8002)

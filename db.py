@@ -71,12 +71,16 @@ def get_db_connection():
             _use_json_fallback = True
             return None
 
+_connection_checked = False
+
 def check_connection():
-    if _use_json_fallback:
+    global _connection_checked
+    if _connection_checked or _use_json_fallback:
         return True
     conn = get_db_connection()
     if conn:
         conn.close()
+        _connection_checked = True
         return True
     return _use_json_fallback
 
