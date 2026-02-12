@@ -178,7 +178,7 @@ def get_user_sessions(user_id: str):
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT DISTINCT session_id FROM chat_logs WHERE user_id = %s AND session_id IS NOT NULL ORDER BY ts DESC",
+            "SELECT session_id FROM chat_logs WHERE user_id = %s AND session_id IS NOT NULL GROUP BY session_id ORDER BY MAX(ts) DESC",
             (str(user_id),)
         )
         sessions = [row[0] for row in cursor.fetchall()]
