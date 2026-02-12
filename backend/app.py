@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "libs"))
 from typing import Optional, Literal
 
 from fastapi import FastAPI

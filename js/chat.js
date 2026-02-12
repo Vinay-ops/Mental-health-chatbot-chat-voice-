@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const provider = getSelectedProvider();
             const token = localStorage.getItem('authToken');
-            const backendBase = 'http://127.0.0.1:8001';
+            const backendBase = 'http://127.0.0.1:8002';
             const res = await fetch(`${backendBase}/api/chat`, {
                 method: 'POST',
                 headers: Object.assign(
