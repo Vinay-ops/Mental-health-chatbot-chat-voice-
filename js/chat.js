@@ -18,6 +18,51 @@ document.addEventListener('DOMContentLoaded', () => {
         return "I hear you. Could you tell me a bit more about that? I'm here to listen and help navigate your options.";
     }
 
+    const providerSelect = document.getElementById('provider-select');
+    function getSelectedProvider() {
+        const p = localStorage.getItem('provider') || '';
+        if (providerSelect) providerSelect.value = p;
+        return p || null;
+    }
+    if (providerSelect) {
+        providerSelect.addEventListener('change', () => {
+            localStorage.setItem('provider', providerSelect.value || '');
+        });
+        const initP = localStorage.getItem('provider') || '';
+        providerSelect.value = initP;
+    }
+
+    async function fetchAIResponse(message) {
+        try {
+            const provider = getSelectedProvider();
+            const token = localStorage.getItem('authToken');
+            const backendBase = 'http://127.0.0.1:8001';
+            const res = await fetch(`${backendBase}/api/chat`, {
+                method: 'POST',
+                headers: Object.assign(
+                    { 'Content-Type': 'application/json' },
+                    token ? { 'Authorization': `Bearer ${token}` } : {}
+                ),
+                body: JSON.stringify({ message, provider })
+            });
+            if (!res.ok) throw new Error('Network response was not ok');
+            const data = await res.json();
+            return data.reply || getAIResponse(message);
+        } catch (e) {
+            return getAIResponse(message);
+        }
+    }
+
+    const synth = window.speechSynthesis;
+    function speak(text) {
+        try {
+            if (!synth) return;
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = 1;
+            utter.pitch = 1;
+            synth.speak(utter);
+        } catch {}
+    }
     function addMessage(text, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message');
@@ -44,12 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
-            // Simulate AI delay
-            setTimeout(() => {
+            fetchAIResponse(text).then((response) => {
                 if (typingIndicator) typingIndicator.style.display = 'none';
-                const response = getAIResponse(text);
                 addMessage(response, false);
-            }, 1500);
+                speak(response);
+            });
         }
     }
 

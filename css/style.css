@@ -172,6 +172,11 @@ body {
     transform: rotate(10deg);
 }
 
+.bg-soft-blue { background: linear-gradient(135deg, #e3f2fd, #fff); color: #4a90e2; }
+.bg-soft-green { background: linear-gradient(135deg, #e8f5e9, #fff); color: #27ae60; }
+.bg-soft-purple { background: linear-gradient(135deg, #f3e5f5, #fff); color: #9b51e0; }
+.feature-icon i { color: inherit; }
+
 /* Chat UI Overhaul */
 .chat-container {
     max-width: 900px;
@@ -192,6 +197,25 @@ body {
 .chat-messages {
     background: #fdfdfd;
     padding: 30px;
+}
+
+.chat-header h5 {
+    background: linear-gradient(90deg, #4a90e2, #9b51e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.form-select#provider-select {
+    border-radius: 12px;
+    border: 1px solid #e6e9ef;
+    background-color: #f7f9fc;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+.form-select#provider-select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
+    background-color: #fff;
 }
 
 .message {
@@ -218,6 +242,23 @@ body {
     padding: 25px;
     background: white;
     gap: 15px;
+}
+
+.mic-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: #eee;
+    color: #4a4a4a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.mic-btn:hover {
+    transform: scale(1.05);
+    background: #e6e6e6;
 }
 
 .chat-input {

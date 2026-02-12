@@ -20,6 +20,8 @@
                     <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="features.html">Features</a></li>
                     <li class="nav-item"><a class="nav-link active" href="chat.html">Start Chat</a></li>
+                    <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="register.html">Create Account</a></li>
                     <li class="nav-item"><a class="nav-link" href="contact.html">Support</a></li>
                 </ul>
             </div>
@@ -31,6 +33,16 @@
             <div class="chat-header">
                 <h5 class="mb-0 fw-bold">MindCare Assistant</h5>
                 <small class="text-muted">Safe • Grounded • Non-Diagnostic</small>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm" id="provider-select" style="width: 180px;">
+                        <option value="">Default</option>
+                        <option value="ollama">Ollama (Free)</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="grok">Grok</option>
+                    </select>
+                    <button class="btn btn-outline-primary btn-sm" id="login-btn">Login</button>
+                    <button class="btn btn-primary btn-sm" id="register-btn">Create Account</button>
+                </div>
             </div>
             
             <div class="chat-messages" id="chat-messages">
@@ -72,6 +84,36 @@
             </div>
         </div>
     </main>
+
+    <div class="modal fade" id="authModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="authModalTitle">Login</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="auth-email" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="auth-password">
+                    </div>
+                    <div class="mb-3 d-none" id="auth-name-wrap">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" id="auth-name" autocomplete="off">
+                    </div>
+                    <div class="text-danger small d-none" id="auth-error"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" id="auth-submit">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/chat.js"></script>
