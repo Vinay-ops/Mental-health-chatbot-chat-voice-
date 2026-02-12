@@ -34,16 +34,16 @@
                     
                     <!-- Language Selector -->
                     <li class="nav-item ms-lg-3">
-                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3" id="lang-selector" style="width: 110px;">
+                        <select class="form-select form-select-sm border-0 glass-card bg-light rounded-pill px-3 py-2 shadow-sm" id="lang-selector" style="width: 110px;">
                             <option value="en">English</option>
                             <option value="hi">हिन्दी</option>
                             <option value="mr">मराठी</option>
                         </select>
                     </li>
 
-                    <li class="nav-item ms-lg-3 auth-guest"><a class="nav-link btn btn-outline-primary px-3 {% if request.endpoint == 'login_page' %}active{% endif %}" href="{{ url_for('login_page') }}" data-t="nav_login">Login</a></li>
-                    <li class="nav-item ms-lg-2 auth-guest"><a class="nav-link btn btn-primary text-white px-3 {% if request.endpoint == 'register_page' %}active{% endif %}" href="{{ url_for('register_page') }}" data-t="nav_register">Register</a></li>
-                    <li class="nav-item ms-lg-3 auth-user" style="display: none;"><button class="nav-link btn btn-outline-danger px-3" onclick="logout()" data-t="nav_logout">Logout</button></li>
+                    <li class="nav-item auth-guest"><a class="nav-link btn-outline-primary nav-btn {% if request.endpoint == 'login_page' %}active{% endif %}" href="{{ url_for('login_page') }}" data-t="nav_login">Login</a></li>
+                    <li class="nav-item auth-guest"><a class="nav-link btn-primary text-white nav-btn {% if request.endpoint == 'register_page' %}active{% endif %}" href="{{ url_for('register_page') }}" data-t="nav_register">Register</a></li>
+                    <li class="nav-item auth-user" style="display: none;"><button class="nav-link btn-outline-danger nav-btn" onclick="logout()" data-t="nav_logout">Logout</button></li>
                 </ul>
             </div>
         </div>
@@ -54,25 +54,46 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer mt-auto py-4">
+    <footer class="footer mt-auto py-5">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="fw-bold mb-3" data-t="hero_title">MindCare Navigator</h5>
-                    <p class="text-muted" data-t="footer_desc">Safe, ethical, and accessible mental health support navigation.</p>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <h5 class="fw-bold mb-3 text-gradient" data-t="hero_title">MindCare Navigator</h5>
+                    <p class="text-muted mb-4" style="max-width: 400px;" data-t="footer_desc">Safe, ethical, and accessible mental health support navigation. Empowering individuals through compassionate AI-driven care.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="bi bi-linkedin"></i></a>
+                    </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-decoration-none text-muted" data-t="footer_privacy">Privacy Policy</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted" data-t="footer_terms">Terms of Service</a></li>
-                        <li><a href="{{ url_for('contact') }}" class="text-decoration-none text-muted" data-t="footer_emergency">Emergency Help</a></li>
-                    </ul>
+                <div class="col-lg-6">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Quick Links</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><a href="{{ url_for('home') }}" class="footer-link text-decoration-none" data-t="nav_home">Home</a></li>
+                                <li class="mb-2"><a href="{{ url_for('about') }}" class="footer-link text-decoration-none" data-t="nav_about">About Us</a></li>
+                                <li class="mb-2"><a href="{{ url_for('features') }}" class="footer-link text-decoration-none" data-t="nav_features">Features</a></li>
+                                <li class="mb-2"><a href="{{ url_for('chat') }}" class="footer-link text-decoration-none" data-t="nav_chat">Start Chat</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Support & Legal</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><a href="#" class="footer-link text-decoration-none" data-t="footer_privacy">Privacy Policy</a></li>
+                                <li class="mb-2"><a href="#" class="footer-link text-decoration-none" data-t="footer_terms">Terms of Service</a></li>
+                                <li class="mb-2"><a href="{{ url_for('contact') }}" class="footer-link text-decoration-none" data-t="footer_emergency">Emergency Help</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <hr class="my-4">
+            <hr class="my-5 opacity-10">
             <div class="text-center">
-                <p class="disclaimer mb-0" data-t="disclaimer">Disclaimer: MindCare Navigator does not provide medical diagnosis or therapy. If you are in crisis, please contact emergency services immediately.</p>
-                <p class="text-muted mt-2">&copy; 2026 MindCare Navigator. All rights reserved.</p>
+                <div class="glass-card d-inline-block px-4 py-2 mb-4">
+                    <p class="disclaimer mb-0 small text-muted" data-t="disclaimer">Disclaimer: MindCare Navigator does not provide medical diagnosis or therapy. If you are in crisis, please contact emergency services immediately.</p>
+                </div>
+                <p class="text-muted small">&copy; 2026 MindCare Navigator. Built with compassion for mental well-being.</p>
             </div>
         </div>
     </footer>
@@ -98,6 +119,15 @@
             localStorage.removeItem('authToken');
             window.location.href = '{{ url_for("home") }}';
         }
+
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', updateAuthUI);
     </script>

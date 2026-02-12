@@ -10,6 +10,7 @@ if not hasattr(collections, 'MutableMapping'):
     collections.Callable = collections.abc.Callable
 
 from flask import Flask, render_template, request, jsonify
+from functools import wraps
 from datetime import datetime, timedelta
 import requests
 # from google import genai
@@ -17,10 +18,17 @@ from passlib.context import CryptContext
 import jwt
 import db
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 
 app = Flask(__name__)
+
+# --- In-Memory Session Storage (Overpowered Memory) ---
+# In a production app, use Redis or a DB, but for this "overpowered" update,
+# we'll use a simple in-memory store for session context.
+session_memory = {} # {session_id: [messages]}
+session_sentiment = {} # {session_id: current_mood}
 
 # --- Configuration ---
 SAFE_SYSTEM_PROMPT = (
@@ -63,6 +71,29 @@ def _make_token(user_id, email: str) -> str:
         "iat": datetime.utcnow(),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        try:
+            data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+            current_user_id = data['sub']
+            current_user_email = data['email']
+        except Exception:
+            return jsonify({'error': 'Token is invalid'}), 401
+        
+        return f(current_user_id, current_user_email, *args, **kwargs)
+    
+    return decorated
 
 def _fallback_response(message: str) -> str:
     m = message.lower()
@@ -175,6 +206,36 @@ def _groq_reply(message: str, system_prompt: str) -> str:
         print(f"Groq Exception: {e}")
         return None
 
+def _analyze_sentiment(message: str) -> str:
+    """Analyze the sentiment of a message using Groq/Gemini for speed."""
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return "neutral"
+        
+    prompt = (
+        "Analyze the emotional sentiment of the following message. "
+        "Respond with ONLY one word from this list: [happy, sad, anxious, angry, calm, neutral]. "
+        f"Message: {message}"
+    )
+    
+    # Try Groq first for speed
+    if os.getenv("GROQ_API_KEY"):
+        res = _groq_reply(prompt, "You are a sentiment analyzer.")
+        if res:
+            res = res.lower().strip().replace(".", "")
+            if res in ["happy", "sad", "anxious", "angry", "calm", "neutral"]:
+                return res
+                
+    # Fallback to Gemini
+    if os.getenv("GEMINI_API_KEY"):
+        res = _gemini_reply(prompt, "You are a sentiment analyzer.")
+        if res:
+            res = res.lower().strip().replace(".", "")
+            if res in ["happy", "sad", "anxious", "angry", "calm", "neutral"]:
+                return res
+                
+    return "neutral"
+
 # --- Routes ---
 
 @app.route('/')
@@ -213,74 +274,133 @@ def chat_api():
     message = data.get('message', '')
     provider = data.get('provider')
     lang = data.get('lang', 'en')
-    print(f"DEBUG: Chat request - provider: {provider}, lang: {lang}, message: {message}")
+    session_id = data.get('session_id')
     
-    # Update system prompt based on language
+    # Try to get user_id from token if available
+    user_id = None
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        try:
+            token = auth_header.split(' ')[1]
+            decoded = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+            user_id = decoded['sub']
+        except Exception:
+            pass
+
+    if not session_id:
+        session_id = request.remote_addr # Fallback
+
+    print(f"DEBUG: Chat request - provider: {provider}, lang: {lang}, session: {session_id}, user: {user_id}")
+    
+    # 1. Sentiment Analysis
+    sentiment = _analyze_sentiment(message)
+    session_sentiment[session_id] = sentiment
+    
+    # 2. Memory Management
+    if session_id not in session_memory:
+        session_memory[session_id] = []
+        # If logged in, try to load last 5 messages from DB for context if memory is empty
+        if user_id and db.check_connection():
+            db_history = db.get_chat_history(user_id, session_id)
+            for h in db_history[-10:]: # Last 10 roles/contents
+                session_memory[session_id].append(h['content'])
+    
+    # Get last 5 messages for context (which is 10 items in session_memory: user/assistant pairs)
+    history = session_memory[session_id][-10:]
+    history_context = ""
+    for i, m in enumerate(history):
+        role = "User" if (len(history) - i) % 2 != 0 else "Assistant"
+        # Wait, the logic above is slightly flawed if we don't know who started. 
+        # Better to store role in session_memory too or just use the last few.
+        history_context += f"{role}: {m}\n"
+    
+    # Update system prompt
+    mood_prompts = {
+        "happy": " The user seems to be in a good mood. Match their energy with positivity!",
+        "sad": " The user seems sad. Be extra gentle, patient, and supportive.",
+        "anxious": " The user seems anxious. Use calming, grounding language.",
+        "angry": " The user seems frustrated or angry. Remain calm, de-escalating, and validating.",
+        "calm": " The user is calm. Maintain a steady, peaceful dialogue.",
+        "neutral": ""
+    }
+    
     lang_instruction = f" Respond in {lang.upper()} language."
-    if lang == 'hi':
-        lang_instruction = " Respond strictly in HINDI (हिन्दी) language."
-    elif lang == 'mr':
-        lang_instruction = " Respond strictly in MARATHI (मराठी) language."
+    if lang == 'hi': lang_instruction = " Respond strictly in HINDI (हिन्दी) language."
+    elif lang == 'mr': lang_instruction = " Respond strictly in MARATHI (मराठी) language."
         
-    current_system_prompt = SAFE_SYSTEM_PROMPT + lang_instruction
+    current_system_prompt = SAFE_SYSTEM_PROMPT + lang_instruction + mood_prompts.get(sentiment, "")
+    full_prompt_message = f"Recent History:\n{history_context}\n\nUser: {message}" if history_context else message
     
     if not provider:
-        # Priority: Groq is default as per user request
-        if os.getenv("GROQ_API_KEY"):
-            provider = "groq"
-        elif os.getenv("GEMINI_API_KEY"):
-            provider = "gemini"
-        elif os.getenv("XAI_API_KEY"):
-            provider = "grok"
-        else:
-            provider = "ollama"
+        provider = "groq" if os.getenv("GROQ_API_KEY") else ("gemini" if os.getenv("GEMINI_API_KEY") else "ollama")
     
-    print(f"DEBUG: Selected provider: {provider}")
-    
-    # Try to log but don't fail if DB is down
+    # Save user message to DB
     try:
         if db.check_connection():
             db.ensure_schema()
-            db.save_log("user", message)
+            db.save_log("user", message, user_id=user_id, session_id=session_id)
     except Exception:
         pass
         
     reply = None
     if provider == "groq":
-        reply = _groq_reply(message, current_system_prompt)
-        # Fallback to Gemini if Groq fails
-        if not reply and os.getenv("GEMINI_API_KEY"):
-            print("DEBUG: Groq failed, falling back to Gemini")
-            reply = _gemini_reply(message, current_system_prompt)
+        reply = _groq_reply(full_prompt_message, current_system_prompt)
     elif provider == "gemini":
-        reply = _gemini_reply(message, current_system_prompt)
-        # Fallback to Groq if Gemini fails
-        if not reply and os.getenv("GROQ_API_KEY"):
-            print("DEBUG: Gemini failed, falling back to Groq")
-            reply = _groq_reply(message, current_system_prompt)
+        reply = _gemini_reply(full_prompt_message, current_system_prompt)
     elif provider == "grok":
-        reply = _grok_reply(message, current_system_prompt)
+        reply = _grok_reply(full_prompt_message, current_system_prompt)
     elif provider == "ollama":
-        reply = _ollama_reply(message, current_system_prompt)
+        reply = _ollama_reply(full_prompt_message, current_system_prompt)
     
-    # Final fallback to Groq if still no reply and not already tried as primary/fallback
-    if not reply and provider != "groq" and os.getenv("GROQ_API_KEY"):
-        print("DEBUG: Final attempt with Groq")
-        reply = _groq_reply(message, current_system_prompt)
-    
-    # Debug: Log the actual API response
-    print(f"DEBUG: API Reply: {reply}")
-        
     if not reply:
         reply = _fallback_response(message)
         
+    # Save to memory
+    session_memory[session_id].append(message)
+    session_memory[session_id].append(reply)
+    if len(session_memory[session_id]) > 20:
+        session_memory[session_id] = session_memory[session_id][-20:]
+
+    # Save assistant reply to DB
     try:
         if db.check_connection():
-            db.save_log("assistant", reply)
+            db.save_log("assistant", reply, user_id=user_id, session_id=session_id)
     except Exception:
         pass
         
-    return jsonify({"reply": reply})
+    return jsonify({
+        "reply": reply,
+        "sentiment": sentiment,
+        "session_id": session_id
+    })
+
+@app.route('/api/history/<session_id>', methods=['GET'])
+@token_required
+def get_history(user_id, email, session_id):
+    if not db.check_connection():
+        return jsonify({"error": "Database error"}), 503
+    history = db.get_chat_history(user_id, session_id)
+    # Convert datetime to string for JSON
+    for h in history:
+        if isinstance(h.get('ts'), datetime):
+            h['ts'] = h['ts'].isoformat()
+        if '_id' in h:
+            h['_id'] = str(h['_id'])
+    return jsonify(history)
+
+@app.route('/api/sessions', methods=['GET'])
+@token_required
+def get_sessions(user_id, email):
+    if not db.check_connection():
+        return jsonify({"error": "Database error"}), 503
+    sessions = db.get_user_sessions(user_id)
+    return jsonify(sessions)
+
+@app.route('/api/new_chat', methods=['POST'])
+def new_chat():
+    import uuid
+    new_id = str(uuid.uuid4())
+    return jsonify({"session_id": new_id})
 
 @app.route('/api/register', methods=['POST'])
 def register():

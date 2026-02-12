@@ -3,25 +3,31 @@
 {% block title %}MindCare Navigator - Safe AI Support{% endblock %}
 
 {% block content %}
+<!-- Modern Background -->
+<div class="mesh-gradient"></div>
+
 <header class="hero-section">
-    <!-- Floating Shapes -->
-    <div class="shape shape-1"></div>
-    <div class="shape shape-2"></div>
-    <div class="shape shape-3"></div>
-    
     <div class="container">
-        <div class="row align-items-center">
+        <div class="row align-items-center min-vh-75">
             <div class="col-lg-7 text-start fade-in-up">
-                <h1 class="hero-title fw-bold" data-t="hero_title_main">Safe, Voice-Enabled Mental Health Support</h1>
-                <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;" data-t="hero_subtitle">This system provides emotional support, stress guidance, and referral awareness without diagnosis or therapy. Designed for safety, accessibility, and you.</p>
+                <div class="badge bg-soft-blue px-3 py-2 rounded-pill mb-4" data-t="chat_status">
+                    <i class="bi bi-shield-check me-2"></i>Safe • Grounded • Non-Diagnostic
+                </div>
+                <h1 class="hero-title fw-bold">
+                    <span data-t="hero_title_main">Safe, Voice-Enabled Mental Health</span>
+                    <span class="text-gradient d-block">Support System</span>
+                </h1>
+                <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;" data-t="hero_subtitle">Empowering your mental well-being with localized AI. Designed for safety, accessibility, and genuine emotional support.</p>
                 <div class="d-flex flex-wrap justify-content-start gap-3">
-                    <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5 rounded-pill shadow" data-t="nav_chat">Start Chat</a>
-                    <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5 rounded-pill" data-t="chat_action_how">Use Voice</a>
+                    <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5 shadow-lg" data-t="nav_chat">Start Chat</a>
+                    <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5" data-t="chat_action_how">Use Voice</a>
                 </div>
             </div>
             <div class="col-lg-5 d-none d-lg-block fade-in-up" style="animation-delay: 0.2s;">
-                <div class="hero-image-container">
-                    <img src="https://img.freepik.com/free-vector/mental-health-awareness-concept_23-2148531011.jpg?t=st=1710831000&exp=1710834600&hmac=7e8e9e" alt="Mental Health Support" class="img-fluid rounded-5 shadow-lg" style="animation: float 5s ease-in-out infinite;">
+                <div class="hero-image-container position-relative">
+                    <div class="glass-card p-2 rounded-5 overflow-hidden shadow-2xl">
+                        <img src="https://img.freepik.com/free-vector/mental-health-awareness-concept_23-2148531011.jpg?t=st=1710831000&exp=1710834600&hmac=7e8e9e" alt="Mental Health Support" class="img-fluid rounded-4" style="animation: float 6s ease-in-out infinite;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -29,41 +35,43 @@
 </header>
 
 <!-- Core Pillars Section -->
-<section class="py-5">
+<section class="py-5 position-relative">
     <div class="container">
-        <div class="text-center mb-5 fade-in-up">
-            <h2 class="fw-bold" data-t="index_commitment_h">Our Commitment to You</h2>
-            <p class="text-muted" data-t="index_commitment_p">Safe, ethical, and accessible navigation for everyone.</p>
+        <div class="row justify-content-center mb-5 fade-in-up">
+            <div class="col-md-8 text-center">
+                <h2 class="fw-bold h1 mb-3" data-t="index_commitment_h">Our Commitment to You</h2>
+                <p class="text-muted lead" data-t="index_commitment_p">Safe, ethical, and accessible navigation for everyone.</p>
+            </div>
         </div>
-        <div class="row g-4 text-center">
+        <div class="row g-4">
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.1s;">
-                <div class="card glass-card h-100 border-0 shadow-sm p-4 text-start" style="border-radius: 20px; transition: all 0.3s ease;">
-                    <div class="feature-icon bg-soft-blue mb-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 15px;">
-                        <i class="bi bi-cpu fs-3"></i>
+                <div class="card glass-card h-100 border-0 p-4">
+                    <div class="feature-icon bg-soft-blue">
+                        <i class="bi bi-cpu"></i>
                     </div>
                     <h4 class="fw-bold mb-3" data-t="index_rag_h">AI + RAG Grounding</h4>
-                    <p class="text-muted" data-t="index_rag_p">Our system uses Retrieval-Augmented Generation to ensure responses are grounded in verified mental health resources.</p>
-                    <a href="{{ url_for('features') }}" class="mt-auto text-decoration-none fw-bold">Learn more <i class="bi bi-arrow-right"></i></a>
+                    <p class="text-muted mb-4" data-t="index_rag_p">Our system uses Retrieval-Augmented Generation to ensure responses are grounded in verified mental health resources.</p>
+                    <a href="{{ url_for('features') }}" class="mt-auto text-decoration-none fw-bold text-primary">Learn more <i class="bi bi-arrow-right ms-1"></i></a>
                 </div>
             </div>
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
-                <div class="card glass-card h-100 border-0 shadow-sm p-4 text-start" style="border-radius: 20px; transition: all 0.3s ease;">
-                    <div class="feature-icon bg-soft-green mb-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 15px;">
-                        <i class="bi bi-people fs-3"></i>
+                <div class="card glass-card h-100 border-0 p-4">
+                    <div class="feature-icon bg-soft-green">
+                        <i class="bi bi-people"></i>
                     </div>
                     <h4 class="fw-bold mb-3" data-t="index_community_h">Community Focused</h4>
-                    <p class="text-muted" data-t="index_community_p">Designed specifically to reach those who lack access to traditional mental health services through simple, accessible tech.</p>
-                    <a href="{{ url_for('about') }}" class="mt-auto text-decoration-none fw-bold">Our mission <i class="bi bi-arrow-right"></i></a>
+                    <p class="text-muted mb-4" data-t="index_community_p">Designed specifically to reach those who lack access to traditional mental health services through simple, accessible tech.</p>
+                    <a href="{{ url_for('about') }}" class="mt-auto text-decoration-none fw-bold text-accent">Our mission <i class="bi bi-arrow-right ms-1"></i></a>
                 </div>
             </div>
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
-                <div class="card glass-card h-100 border-0 shadow-sm p-4 text-start" style="border-radius: 20px; transition: all 0.3s ease;">
-                    <div class="feature-icon bg-soft-purple mb-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 15px;">
-                        <i class="bi bi-shield-check fs-3"></i>
+                <div class="card glass-card h-100 border-0 p-4">
+                    <div class="feature-icon bg-soft-purple">
+                        <i class="bi bi-shield-check"></i>
                     </div>
                     <h4 class="fw-bold mb-3" data-t="index_ethical_h">Ethical & Safe</h4>
-                    <p class="text-muted" data-t="index_ethical_p">We focus on emotional guidance and safety, strictly avoiding medical diagnosis or formal therapy in all interactions.</p>
-                    <a href="{{ url_for('contact') }}" class="mt-auto text-decoration-none fw-bold">Get support <i class="bi bi-arrow-right"></i></a>
+                    <p class="text-muted mb-4" data-t="index_ethical_p">We focus on emotional guidance and safety, strictly avoiding medical diagnosis or formal therapy in all interactions.</p>
+                    <a href="{{ url_for('contact') }}" class="mt-auto text-decoration-none fw-bold text-secondary">Get support <i class="bi bi-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>

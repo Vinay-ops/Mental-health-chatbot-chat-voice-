@@ -65,16 +65,18 @@ def ensure_schema():
     try:
         db = client[MONGO_DB]
         db.users.create_index("email", unique=True)
-        db.chat_logs.create_index("ts")
+        db.chat_logs.create_index([("user_id", 1), ("session_id", 1), ("ts", 1)])
     except Exception:
         pass
 
-def save_log(role: str, content: str):
+def save_log(role: str, content: str, user_id: str = None, session_id: str = None):
     if _use_json_fallback:
         data = _load_json_db()
         data["chat_logs"].append({
             "role": role,
             "content": content,
+            "user_id": user_id,
+            "session_id": session_id,
             "ts": datetime.utcnow().isoformat()
         })
         _save_json_db(data)
@@ -84,10 +86,53 @@ def save_log(role: str, content: str):
     if not client: return
     try:
         db = client[MONGO_DB]
-        log_entry = {"role": role, "content": content, "ts": datetime.utcnow()}
+        log_entry = {
+            "role": role, 
+            "content": content, 
+            "user_id": user_id,
+            "session_id": session_id,
+            "ts": datetime.utcnow()
+        }
         db.chat_logs.insert_one(log_entry)
     except Exception:
         pass
+
+def get_chat_history(user_id: str, session_id: str):
+    if _use_json_fallback:
+        data = _load_json_db()
+        return [log for log in data["chat_logs"] 
+                if log.get("user_id") == user_id and log.get("session_id") == session_id]
+
+    client = get_client()
+    if not client: return []
+    try:
+        db = client[MONGO_DB]
+        return list(db.chat_logs.find({"user_id": user_id, "session_id": session_id}).sort("ts", 1))
+    except Exception:
+        return []
+
+def get_user_sessions(user_id: str):
+    if _use_json_fallback:
+        data = _load_json_db()
+        sessions = set()
+        for log in data["chat_logs"]:
+            if log.get("user_id") == user_id and log.get("session_id"):
+                sessions.add(log["session_id"])
+        return sorted(list(sessions), reverse=True)
+
+    client = get_client()
+    if not client: return []
+    try:
+        db = client[MONGO_DB]
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {"$group": {"_id": "$session_id", "last_ts": {"$max": "$ts"}}},
+            {"$sort": {"last_ts": -1}}
+        ]
+        results = list(db.chat_logs.aggregate(pipeline))
+        return [res["_id"] for res in results if res["_id"]]
+    except Exception:
+        return []
 
 def get_user_by_email(email: str):
     if _use_json_fallback:

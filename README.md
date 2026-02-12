@@ -17,6 +17,20 @@ MindCare Navigator is a full-stack Flask application designed to bridge the gap 
 
 ---
 
+## 📦 Libraries Used
+
+To provide a robust and secure experience, MindCare Navigator utilizes several industry-standard libraries:
+
+- **[Flask](https://flask.palletsprojects.com/)**: A lightweight WSGI web application framework used to power the core server and API routing.
+- **[PyJWT](https://pyjwt.readthedocs.io/)**: Handles the generation and verification of JSON Web Tokens for secure, stateless user authentication.
+- **[Passlib](https://passlib.readthedocs.io/) & [Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/)**: Provides strong, salted password hashing to ensure user data remains secure.
+- **[Requests](https://requests.readthedocs.io/)**: A simple yet powerful HTTP library used to communicate with external AI provider APIs (Groq, Gemini, etc.).
+- **[PyMongo](https://pymongo.readthedocs.io/)**: The official Python driver for MongoDB, used to manage user accounts and session logs.
+- **[Python-Dotenv](https://saurabh-kumar.com/python-dotenv/)**: Securely manages environment variables (like API keys) by loading them from a `.env` file.
+- **[Flask-CORS](https://flask-cors.readthedocs.io/)**: Handles Cross-Origin Resource Sharing, allowing the frontend to interact safely with the backend API.
+
+---
+
 ## 📂 Project Structure & File Usage
 
 ### **Core Backend**
@@ -42,10 +56,12 @@ MindCare Navigator is a full-stack Flask application designed to bridge the gap 
 
 ## ✨ Key Features
 
-- **🗣️ Dual Mode Interface**: Dedicated Chat and Voice modes for diverse user preferences.
+- **🗣️ Unified Dual Mode**: Seamlessly switch between Chat and Voice. Interactions in Voice mode are automatically mirrored in the background Chat log for a continuous experience.
+- **🕒 Persistent Chat History**: Logged-in users can access their full history of past conversations through a dedicated sidebar.
+- **🔄 Session-Based Support**: Each conversation is assigned a unique session ID, allowing you to resume exactly where you left off.
 - **🌍 Multi-Language Support**: Complete UI and AI response localization for English, Hindi, and Marathi.
-- **🛡️ Provider Redundancy**: Intelligent fallback system (Groq -> Gemini -> Grok -> Ollama) ensuring high availability.
-- **💎 Premium UI**: High-end Glassmorphism design with fluid animations and zero-collision responsive layouts.
+- **🛡️ Multi-Provider AI**: High-availability support for Groq (Ultra-Fast), Gemini (Smart), Grok (X.ai), and Ollama (Local).
+- **💎 Modern UI/UX**: Overhauled design featuring Mesh Gradients, Glassmorphism, and fluid animations for a professional, calming experience.
 - **🔐 Secure Auth**: MongoDB-backed user registration and login with protected chat access.
 - **🚫 Non-Diagnostic**: Strictly adheres to ethical guidelines, focusing on support without medical claims.
 

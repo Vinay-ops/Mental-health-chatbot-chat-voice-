@@ -19,15 +19,129 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceAiReply = document.getElementById('voice-ai-reply');
     const voiceAiReplyBox = document.getElementById('voice-ai-reply-box');
     const recordingVisualizer = document.querySelector('.recording-visualizer');
+    const sentimentBadge = document.getElementById('sentiment-badge');
+    const historyToggle = document.getElementById('history-toggle');
+    const sessionsList = document.getElementById('sessions-list');
+    const historyLoading = document.getElementById('history-loading');
+    const historyEmpty = document.getElementById('history-empty');
+    const newChatBtn = document.getElementById('new-chat-btn');
+    const sidebarNewChat = document.getElementById('sidebar-new-chat');
 
     // --- State ---
     let currentMode = 'chat'; // 'chat' or 'voice'
     let isRecording = false;
+    let sessionId = localStorage.getItem('chat_session_id') || null;
     const synth = window.speechSynthesis;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.Recognition || window.webkitSpeechRecognition;
     let recognition = null;
 
     // --- Initialization ---
+    async function initSession() {
+        if (!sessionId) {
+            await startNewChat();
+        }
+        loadSessions();
+    }
+
+    async function startNewChat() {
+        try {
+            const res = await fetch('/api/new_chat', { method: 'POST' });
+            const data = await res.json();
+            sessionId = data.session_id;
+            localStorage.setItem('chat_session_id', sessionId);
+            // Clear UI
+            chatMessages.innerHTML = `
+                <div class="message message-ai fade-in-up">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="ai-icon-container"><i class="bi bi-robot"></i></div>
+                        <div class="message-content" data-t="chat_welcome">${t('chat_welcome')}</div>
+                    </div>
+                </div>
+            `;
+            voiceTranscript.textContent = "...";
+            voiceAiReplyBox.style.display = 'none';
+            updateSentimentUI('neutral');
+            loadSessions();
+        } catch (e) {
+            console.error('Error starting new chat:', e);
+        }
+    }
+
+    async function loadSessions() {
+        const token = localStorage.getItem('authToken');
+        if (!token || !sessionsList) return;
+
+        historyLoading.style.display = 'block';
+        historyEmpty.style.display = 'none';
+        sessionsList.innerHTML = '';
+
+        try {
+            const res = await fetch('/api/sessions', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const sessions = await res.json();
+            historyLoading.style.display = 'none';
+
+            if (sessions.length === 0) {
+                historyEmpty.style.display = 'block';
+                return;
+            }
+
+            sessions.forEach(sid => {
+                const item = document.createElement('div');
+                item.className = `history-item ${sid === sessionId ? 'active' : ''}`;
+                item.innerHTML = `
+                    <div class="history-date">Session ID</div>
+                    <div class="history-preview text-truncate">${sid.substring(0, 24)}...</div>
+                `;
+                item.addEventListener('click', () => {
+                    loadHistory(sid);
+                    // Close offcanvas
+                    const bsOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('historySidebar'));
+                    if (bsOffcanvas) bsOffcanvas.hide();
+                });
+                sessionsList.appendChild(item);
+            });
+        } catch (e) {
+            console.error('Error loading sessions:', e);
+            historyLoading.style.display = 'none';
+        }
+    }
+
+    async function loadHistory(sid) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        sessionId = sid;
+        localStorage.setItem('chat_session_id', sessionId);
+        chatMessages.innerHTML = ''; // Clear current
+        typingIndicator.style.display = 'block';
+
+        try {
+            const res = await fetch(`/api/history/${sid}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const history = await res.json();
+            typingIndicator.style.display = 'none';
+
+            if (history.length === 0) {
+                chatMessages.innerHTML = `<div class="text-center py-4 text-muted small">No messages in this session</div>`;
+            } else {
+                history.forEach(log => {
+                    addChatMessage(log.content, log.role === 'user');
+                });
+            }
+            loadSessions(); // Refresh active state
+        } catch (e) {
+            console.error('Error loading history:', e);
+            typingIndicator.style.display = 'none';
+        }
+    }
+
+    newChatBtn?.addEventListener('click', startNewChat);
+    sidebarNewChat?.addEventListener('click', startNewChat);
+
+    initSession();
     if (providerSelect) {
         providerSelect.value = localStorage.getItem('provider') || 'groq';
         providerSelect.addEventListener('change', () => {
@@ -45,16 +159,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchMode(mode) {
         currentMode = mode;
         if (mode === 'chat') {
-            chatModeBtn.classList.replace('btn-outline-primary', 'btn-primary');
-            voiceModeBtn.classList.replace('btn-primary', 'btn-outline-primary');
+            chatModeBtn.classList.add('active');
+            voiceModeBtn.classList.remove('active');
             chatModeView.style.setProperty('display', 'flex', 'important');
             voiceModeView.style.setProperty('display', 'none', 'important');
             chatInputArea.style.display = 'block';
             quickActions.style.display = 'flex';
             stopRecording();
         } else {
-            voiceModeBtn.classList.replace('btn-outline-primary', 'btn-primary');
-            chatModeBtn.classList.replace('btn-primary', 'btn-outline-primary');
+            voiceModeBtn.classList.add('active');
+            chatModeBtn.classList.remove('active');
             voiceModeView.style.setProperty('display', 'flex', 'important');
             chatModeView.style.setProperty('display', 'none', 'important');
             chatInputArea.style.display = 'none';
@@ -83,17 +197,62 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
-                body: JSON.stringify({ message, provider, lang })
+                body: JSON.stringify({ message, provider, lang, session_id: sessionId })
             });
             
             if (!res.ok) throw new Error('API Error');
             const data = await res.json();
+            
+            // Save session ID for memory
+            if (data.session_id) {
+                sessionId = data.session_id;
+                localStorage.setItem('chat_session_id', sessionId);
+            }
+            
+            // Update Sentiment UI
+            if (data.sentiment) {
+                updateSentimentUI(data.sentiment);
+            }
+            
             return data.reply;
         } catch (e) {
             console.error('Chat Error:', e);
-            // We could localize this error too, but it's a fallback
-            return "I'm having trouble connecting to my knowledge base right now. Please check your internet or try again in a moment.";
+            return t('chat_error_fallback');
         }
+    }
+
+    function updateSentimentUI(sentiment) {
+        if (!sentimentBadge) return;
+        
+        const iconMap = {
+            happy: 'bi-emoji-laughing',
+            sad: 'bi-emoji-frown',
+            anxious: 'bi-emoji-expressionless',
+            angry: 'bi-emoji-angry',
+            calm: 'bi-emoji-heart',
+            neutral: 'bi-emoji-smile'
+        };
+        
+        const colorMap = {
+            happy: 'bg-soft-green text-success',
+            sad: 'bg-soft-blue text-primary',
+            anxious: 'bg-soft-purple text-dark',
+            angry: 'bg-danger-subtle text-danger',
+            calm: 'bg-info-subtle text-info',
+            neutral: 'bg-soft-blue text-primary'
+        };
+        
+        // Add pop animation
+        sentimentBadge.style.animation = 'none';
+        sentimentBadge.offsetHeight; // trigger reflow
+        sentimentBadge.style.animation = 'pulse 0.5s ease-out';
+        
+        const icon = sentimentBadge.querySelector('i');
+        const text = sentimentBadge.querySelector('span');
+        
+        icon.className = `bi ${iconMap[sentiment] || iconMap.neutral} me-1`;
+        text.textContent = t(`mood_${sentiment}`);
+        sentimentBadge.className = `badge ${colorMap[sentiment] || colorMap.neutral} rounded-pill px-3 py-2 transition-all`;
     }
 
     // --- Chat Mode Logic ---
@@ -128,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         typingIndicator.style.display = 'none';
         addChatMessage(response, false);
         
-        speak(response); 
+        // speak(response); // Voice disabled in Chat mode as requested
     }
 
     sendBtn.addEventListener('click', handleChatSend);
@@ -198,18 +357,32 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Speech recognition is not supported in this browser.");
             return;
         }
+        
+        // Stop any current speaking before starting to listen
+        if (synth.speaking) {
+            synth.cancel();
+        }
+
         if (isRecording) {
             stopRecording();
         } else {
             const currentLang = localStorage.getItem('selectedLanguage') || 'en';
             const langMap = { 'en': 'en-US', 'hi': 'hi-IN', 'mr': 'mr-IN' };
             recognition.lang = langMap[currentLang] || 'en-US';
-            recognition.start();
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error("Recognition already started or error:", e);
+                stopRecording();
+            }
         }
     });
 
     async function handleVoiceInput(text) {
         if (!text) return;
+        
+        // Add to background chat history for continuity
+        addChatMessage(text, true);
         
         voiceStatusText.textContent = "...";
         typingIndicator.style.display = 'block';
@@ -220,6 +393,9 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceStatusText.textContent = ""; 
         voiceAiReply.textContent = response;
         voiceAiReplyBox.style.display = 'block';
+        
+        // Add response to background chat history
+        addChatMessage(response, false);
         
         speak(response);
     }
@@ -252,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         utter.onend = () => {
             if (currentMode === 'voice') {
-                voiceStatusText.textContent = "Click to start speaking";
+                voiceStatusText.textContent = t('voice_click_to_start');
             }
         };
         

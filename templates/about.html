@@ -3,41 +3,71 @@
 {% block title %}About - MindCare Navigator{% endblock %}
 
 {% block content %}
-<section class="py-5" style="background: radial-gradient(circle at bottom right, #f3e5f5, transparent);">
+<div class="mesh-gradient"></div>
+
+<section class="py-5 hero-section">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-lg-8 fade-in-up">
-                <h1 class="display-5 fw-bold mb-4" style="background: var(--grad-calm); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-t="about_title">About the Project</h1>
-                <p class="lead mb-4" data-t="about_lead">MindCare Navigator is an initiative dedicated to making mental health navigation accessible, safe, and ethical for everyone.</p>
+            <div class="col-lg-10 col-xl-8 fade-in-up">
+                <div class="text-center mb-5">
+                    <h1 class="hero-title text-gradient mb-3" data-t="about_title">About the Project</h1>
+                    <p class="lead text-muted mx-auto" style="max-width: 600px;" data-t="about_lead">MindCare Navigator is an initiative dedicated to making mental health navigation accessible, safe, and ethical for everyone.</p>
+                </div>
                 
-                <div class="card glass-card mb-5">
-                    <h3 data-t="about_purpose_h">Our Purpose</h3>
-                    <p data-t="about_purpose_p">The primary goal of MindCare Navigator is to bridge the gap in mental health support for underserved communities. Many people face barriers such as cost, stigma, or lack of local resources. Our AI-driven system provides an immediate, safe point of contact for emotional guidance and stress management.</p>
+                <div class="card glass-card border-0 shadow-lg p-4 p-md-5 mb-5">
+                    <div class="row align-items-center g-4">
+                        <div class="col-md-7">
+                            <h3 class="fw-bold mb-3" data-t="about_purpose_h">Our Purpose</h3>
+                            <p class="text-muted mb-0" data-t="about_purpose_p">The primary goal of MindCare Navigator is to bridge the gap in mental health support for underserved communities. Many people face barriers such as cost, stigma, or lack of local resources. Our AI-driven system provides an immediate, safe point of contact for emotional guidance and stress management.</p>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="p-4 bg-soft-blue rounded-4 text-center">
+                                <i class="bi bi-bullseye display-4 mb-3"></i>
+                                <h5 class="fw-bold mb-0">Goal Oriented</h5>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="card glass-card mb-5" style="background: var(--primary-soft); border: none;">
-                    <h3 data-t="about_research_h">Research-Driven Innovation</h3>
-                    <p data-t="about_research_p">Inspired by recent breakthroughs in AI healthcare research, specifically <strong>Retrieval-Augmented Generation (RAG)</strong>, our system doesn't just "generate" answers. It retrieves information from validated, peer-reviewed mental health datasets to ensure that the support provided is accurate, safe, and helpful.</p>
+                <div class="card glass-card border-0 shadow-lg p-4 p-md-5 mb-5" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05)) !important;">
+                    <div class="row align-items-center g-4 flex-md-row-reverse">
+                        <div class="col-md-7">
+                            <h3 class="fw-bold mb-3" data-t="about_research_h">Research-Driven Innovation</h3>
+                            <p class="text-muted mb-0" data-t="about_research_p">Inspired by recent breakthroughs in AI healthcare research, specifically <strong>Retrieval-Augmented Generation (RAG)</strong>, our system doesn't just "generate" answers. It retrieves information from validated, peer-reviewed mental health datasets to ensure that the support provided is accurate, safe, and helpful.</p>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="p-4 bg-soft-purple rounded-4 text-center">
+                                <i class="bi bi-cpu display-4 mb-3"></i>
+                                <h5 class="fw-bold mb-0">RAG Technology</h5>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="row g-4 mb-5">
                     <div class="col-md-6">
-                        <div class="card glass-card p-4 h-100">
-                            <h4 style="color: var(--brand-blue)" data-t="about_problem_h">Problem We Solve</h4>
-                            <p class="text-muted" data-t="about_problem_p">Reducing the "wait time" for emotional support and providing clear pathways to professional care without the confusion of searching the open web.</p>
+                        <div class="card glass-card p-4 h-100 border-0 shadow">
+                            <div class="feature-icon bg-soft-blue mb-3">
+                                <i class="bi bi-lightbulb"></i>
+                            </div>
+                            <h4 class="fw-bold" data-t="about_problem_h">Problem We Solve</h4>
+                            <p class="text-muted mb-0" data-t="about_problem_p">Reducing the "wait time" for emotional support and providing clear pathways to professional care without the confusion of searching the open web.</p>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card glass-card p-4 h-100">
-                            <h4 style="color: var(--brand-teal)" data-t="about_different_h">Why We're Different</h4>
-                            <p class="text-muted" data-t="about_different_p">Unlike diagnostic chatbots that might attempt to label conditions, we focus purely on navigation, grounding, and referral awareness. We are a bridge, not a doctor.</p>
+                        <div class="card glass-card p-4 h-100 border-0 shadow">
+                            <div class="feature-icon bg-soft-green mb-3">
+                                <i class="bi bi-signpost-2"></i>
+                            </div>
+                            <h4 class="fw-bold" data-t="about_different_h">Why We're Different</h4>
+                            <p class="text-muted mb-0" data-t="about_different_p">Unlike diagnostic chatbots that might attempt to label conditions, we focus purely on navigation, grounding, and referral awareness. We are a bridge, not a doctor.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="text-center py-4">
-                    <h4 class="mb-3" data-t="about_safety_h">Focus on Accessibility and Safety</h4>
-                    <p class="text-muted" data-t="about_safety_p">Our interface is designed to be minimal and low-bandwidth friendly, ensuring that anyone with a basic internet connection can access the support they need.</p>
+                <div class="text-center py-5 glass-card border-0 shadow-sm rounded-4">
+                    <h4 class="fw-bold mb-3" data-t="about_safety_h">Focus on Accessibility and Safety</h4>
+                    <p class="text-muted mx-auto mb-0" style="max-width: 600px;" data-t="about_safety_p">Our interface is designed to be minimal and low-bandwidth friendly, ensuring that anyone with a basic internet connection can access the support they need.</p>
                 </div>
             </div>
         </div>

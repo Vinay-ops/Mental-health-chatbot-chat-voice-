@@ -3,28 +3,33 @@
 {% block title %}Login - MindCare Navigator{% endblock %}
 
 {% block content %}
-<section class="auth-section py-5">
+<div class="mesh-gradient"></div>
+
+<section class="auth-section py-5 min-vh-100 d-flex align-items-center">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-5">
-                <div class="card glass-card border-0 shadow-sm p-4">
-                    <div class="text-center mb-4">
-                        <h2 class="fw-bold" data-t="login_title">Welcome Back</h2>
+                <div class="card glass-card border-0 shadow-2xl p-4 p-md-5">
+                    <div class="text-center mb-5">
+                        <div class="feature-icon bg-soft-blue mx-auto mb-4">
+                            <i class="bi bi-person-lock"></i>
+                        </div>
+                        <h2 class="fw-bold h1 text-gradient" data-t="login_title">Welcome Back</h2>
                         <p class="text-muted" data-t="login_subtitle">Sign in to continue your journey</p>
                     </div>
                     <form id="loginForm">
-                        <div class="mb-3">
-                            <label for="email" class="form-label" data-t="login_email">Email Address</label>
+                        <div class="mb-4">
+                            <label for="email" class="form-label small fw-bold text-uppercase text-muted" data-t="login_email">Email Address</label>
                             <input type="email" class="form-control" id="email" placeholder="name@example.com" data-t="login_email" required>
                         </div>
                         <div class="mb-4">
-                            <label for="password" class="form-label" data-t="login_password">Password</label>
+                            <label for="password" class="form-label small fw-bold text-uppercase text-muted" data-t="login_password">Password</label>
                             <input type="password" class="form-control" id="password" placeholder="••••••••" data-t="login_password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 py-2 mb-3" data-t="login_btn">Sign In</button>
+                        <button type="submit" class="btn btn-primary w-100 py-3 shadow-lg mb-4" data-t="login_btn">Sign In</button>
                     </form>
                     <div class="text-center">
-                        <p class="mb-0 text-muted"><span data-t="login_footer">Don't have an account?</span> <a href="{{ url_for('register_page') }}" class="text-primary fw-semibold" data-t="login_link">Register here</a></p>
+                        <p class="mb-0 text-muted"><span data-t="login_footer">Don't have an account?</span> <a href="{{ url_for('register_page') }}" class="text-primary fw-bold text-decoration-none ms-1" data-t="login_link">Register here</a></p>
                     </div>
                 </div>
             </div>

@@ -3,29 +3,48 @@
 {% block title %}Chat - MindCare Navigator{% endblock %}
 
 {% block content %}
-<section class="py-5 bg-light min-vh-100">
+<div class="mesh-gradient"></div>
+
+<section class="py-4 py-md-5 min-vh-100 d-flex align-items-center">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-lg-10 col-xl-8">
-                <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 30px;">
+            <div class="col-lg-10 col-xl-9">
+                <div class="card glass-card border-0 shadow-2xl overflow-hidden">
                     <!-- Chat Header -->
-                    <div class="card-header bg-white border-bottom py-3 px-4">
+                    <div class="card-header bg-transparent border-bottom border-light py-3 px-4">
                         <div class="row align-items-center g-3">
-                            <div class="col-md-5 text-center text-md-start">
-                                <h4 class="mb-0 fw-bold text-primary" data-t="chat_header">MindCare Assistant</h4>
-                                <p class="text-muted small mb-0"><i class="bi bi-shield-check me-1"></i><span data-t="chat_status">Safe • Grounded • Non-Diagnostic</span></p>
+                            <div class="col-md-6 text-center text-md-start">
+                                <h4 class="mb-0 fw-bold text-gradient" data-t="chat_header">MindCare Assistant</h4>
+                                <div class="d-flex align-items-center flex-wrap gap-2 mt-2 justify-content-center justify-content-md-start">
+                                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 shadow-sm border" id="sentiment-badge">
+                                        <i class="bi bi-emoji-smile me-1"></i><span data-t="mood_neutral">Neutral</span>
+                                    </span>
+                                    <div class="d-flex align-items-center gap-2 ms-md-2 text-muted small flex-wrap justify-content-center">
+                                        <span><i class="bi bi-shield-check me-1"></i>Safe</span>
+                                        <span class="opacity-50">•</span>
+                                        <span>Grounded</span>
+                                        <span class="opacity-50">•</span>
+                                        <span>Non-Diagnostic</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-7">
-                                <div class="d-flex flex-wrap justify-content-center justify-content-md-end align-items-center gap-2">
-                                    <div class="d-flex gap-2 me-md-3">
-                                        <button class="btn btn-primary px-3 rounded-pill btn-sm" id="mode-chat-btn">
+                            <div class="col-md-6">
+                                <div class="d-flex flex-wrap justify-content-center justify-content-md-end align-items-center gap-2 gap-md-3">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm border bg-white" id="new-chat-btn">
+                                        <i class="bi bi-plus-lg me-1"></i><span data-t="chat_new">New Chat</span>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm border bg-white" id="history-toggle" data-bs-toggle="offcanvas" data-bs-target="#historySidebar">
+                                        <i class="bi bi-clock-history me-1"></i><span data-t="chat_history">History</span>
+                                    </button>
+                                    <div class="mode-toggle-container p-1 bg-light rounded-pill d-flex shadow-inner">
+                                        <button class="btn mode-btn active px-4 py-2 rounded-pill transition-all" id="mode-chat-btn">
                                             <i class="bi bi-chat-dots-fill me-2"></i><span data-t="chat_mode_chat">Chat</span>
                                         </button>
-                                        <button class="btn btn-outline-primary px-3 rounded-pill btn-sm" id="mode-voice-btn">
+                                        <button class="btn mode-btn px-4 py-2 rounded-pill transition-all" id="mode-voice-btn">
                                             <i class="bi bi-mic-fill me-2"></i><span data-t="chat_mode_voice">Voice</span>
                                         </button>
                                     </div>
-                                    <select class="form-select form-select-sm border-0 bg-light rounded-pill" id="provider-select" style="width: 160px;">
+                                    <select class="form-select form-select-sm border-0 bg-light rounded-pill shadow-sm" id="provider-select" style="width: 160px; height: 38px;">
                                         <option value="groq">Groq (Ultra Fast)</option>
                                         <option value="gemini">Gemini (Smartest)</option>
                                         <option value="ollama">Ollama (Local)</option>
@@ -37,11 +56,11 @@
                     </div>
 
                     <!-- Chat Body -->
-                    <div class="card-body p-0 d-flex flex-column" style="height: 75vh; min-height: 550px; max-height: 850px;">
+                    <div class="card-body p-0 d-flex flex-column" style="height: 70vh; min-height: 550px;">
                         <!-- Chat Mode View -->
                         <div id="chat-mode-view" class="h-100 d-flex flex-column overflow-hidden">
-                            <div class="chat-messages flex-grow-1 p-3 p-md-4" id="chat-messages" style="overflow-y: auto; background-color: #f8faff;">
-                                <div class="message message-ai">
+                            <div class="chat-messages flex-grow-1 p-3 p-md-4" id="chat-messages" style="overflow-y: auto; background: rgba(255,255,255,0.2);">
+                                <div class="message message-ai fade-in-up">
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="ai-icon-container">
                                             <i class="bi bi-robot"></i>
@@ -55,62 +74,62 @@
                         </div>
 
                         <!-- Voice Mode View -->
-                        <div id="voice-mode-view" class="h-100 d-flex flex-column justify-content-center align-items-center p-3 p-md-5 text-center" style="display: none !important; background-color: #f8faff; overflow-y: auto;">
-                            <div class="voice-status mb-4 mt-auto">
-                                <div class="recording-visualizer mb-4">
+                        <div id="voice-mode-view" class="h-100 d-flex flex-column align-items-center p-3 p-md-5 text-center" style="display: none !important; background: transparent; overflow-y: auto;">
+                            <div class="voice-status mb-4 mt-2 mt-md-4">
+                                <div class="recording-visualizer mb-5">
                                     <div class="pulse-ring"></div>
                                     <div class="pulse-ring delay-1"></div>
-                                    <div class="main-mic-btn">
+                                    <div class="main-mic-btn shadow-lg">
                                         <i class="bi bi-mic-fill"></i>
                                     </div>
                                 </div>
-                                <h3 class="fw-bold text-primary mb-2 px-3" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
-                                <p class="text-muted px-3" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
+                                <h3 class="fw-bold text-gradient mb-2 px-3 h2" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
+                                <p class="text-muted px-3 lead" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
                             </div>
                             
-                            <div class="transcript-box p-3 p-md-4 bg-white rounded-4 shadow-sm w-100 mb-4" style="max-width: 500px; min-height: 120px;">
-                                <p class="text-muted mb-2 small fw-bold text-uppercase" data-t="voice_you_said">You said:</p>
-                                <div id="voice-transcript" class="fs-5 text-dark" style="word-break: break-word;">...</div>
+                            <div class="transcript-box p-4 glass-card shadow-lg w-100 mb-4 border-0" style="max-width: 600px; min-height: 120px; background: rgba(255,255,255,0.5) !important;">
+                                <p class="text-primary mb-2 small fw-bold text-uppercase" data-t="voice_you_said">You said:</p>
+                                <div id="voice-transcript" class="fs-4 text-dark fw-medium" style="word-break: break-word;">...</div>
                             </div>
                             
-                            <div class="ai-reply-box p-3 p-md-4 bg-primary text-white rounded-4 shadow-sm w-100 mb-auto" style="max-width: 500px; display: none;" id="voice-ai-reply-box">
-                                <p class="text-white-50 mb-2 small fw-bold text-uppercase" data-t="voice_assistant_reply">MindCare Assistant:</p>
-                                <div id="voice-ai-reply" class="fs-5" style="word-break: break-word;">...</div>
+                            <div class="ai-reply-box p-4 rounded-5 shadow-2xl w-100 mb-4 border-0" style="max-width: 600px; display: none; background: linear-gradient(135deg, var(--primary), var(--secondary));" id="voice-ai-reply-box">
+                                <p class="text-white-50 mb-2 small fw-bold text-uppercase" data-t="voice_assistant_reply">Assistant:</p>
+                                <div id="voice-ai-reply" class="fs-4 text-white fw-medium" style="word-break: break-word;">...</div>
                             </div>
                         </div>
 
-                        <!-- Typing Indicator (Shared) -->
+                        <!-- Typing Indicator -->
                         <div class="typing-indicator px-4 py-2" id="typing-indicator" style="display: none;">
-                            <div class="bg-white p-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-1">
+                            <div class="bg-white px-3 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 border">
                                 <span class="typing-dot"></span>
                                 <span class="typing-dot"></span>
                                 <span class="typing-dot"></span>
+                                <small class="text-muted ms-1">MindCare is thinking...</small>
                             </div>
                         </div>
 
-                        <!-- Quick Actions (Chat Mode Only) -->
-                        <div class="quick-actions px-3 px-md-4 pb-2 d-flex flex-nowrap gap-2 overflow-x-auto" id="quick-actions" style="scrollbar-width: none; -ms-overflow-style: none;">
+                        <!-- Quick Actions -->
+                        <div class="quick-actions px-3 px-md-4 pb-3 d-flex flex-nowrap gap-2 overflow-x-auto" id="quick-actions" style="scrollbar-width: none; -ms-overflow-style: none;">
                             <style>.quick-actions::-webkit-scrollbar { display: none; }</style>
-                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_stress">I'm feeling stressed</button>
-                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_resources">Need local resources</button>
-                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_breathing">Breathing exercises</button>
-                            <button class="btn btn-outline-primary btn-sm rounded-pill action-chip flex-shrink-0" data-t="chat_action_how">How does this work?</button>
+                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_stress">I'm feeling stressed</button>
+                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_resources">Need local resources</button>
+                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_breathing">Breathing exercises</button>
+                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_how">How does this work?</button>
                         </div>
 
-                        <!-- Chat Input Area (Chat Mode Only) -->
-                        <div class="chat-input-area p-3 p-md-4 bg-white border-top" id="chat-input-area">
-                            <div class="input-group gap-2 align-items-center">
-                                <input type="text" class="form-control border-0 bg-light px-3 px-md-4 py-2 py-md-3 rounded-pill chat-input" id="user-input" placeholder="Type your message here..." autocomplete="off" data-t="chat_placeholder">
-                                <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center flex-shrink-0" id="send-btn" style="width: 45px; height: 45px; md-width: 50px; md-height: 50px;">
-                                    <i class="bi bi-send-fill"></i>
+                        <!-- Chat Input Area -->
+                        <div class="chat-input-area p-3 p-md-4 bg-transparent border-top border-light" id="chat-input-area">
+                            <div class="input-group gap-3 align-items-center bg-white p-2 rounded-pill shadow-lg border">
+                                <input type="text" class="form-control border-0 bg-transparent px-4 py-3 chat-input" id="user-input" placeholder="Type your message here..." autocomplete="off" data-t="chat_placeholder">
+                                <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" id="send-btn" style="width: 54px; height: 54px;">
+                                    <i class="bi bi-send-fill fs-5"></i>
                                 </button>
                             </div>
                         </div>
                         
-                        <!-- Footer Info -->
-                        <div class="text-center pb-3 bg-white">
+                        <div class="text-center pb-3">
                             <small class="text-muted" style="font-size: 0.75rem;" data-t="chat_info">
-                                <i class="bi bi-info-circle me-1"></i>This system does not provide diagnosis or therapy. If in crisis, call emergency services.
+                                <i class="bi bi-info-circle me-1"></i>Safe AI Support • Non-Diagnostic • Localized for you
                             </small>
                         </div>
                     </div>
@@ -119,6 +138,97 @@
         </div>
     </div>
 </section>
+
+<!-- History Sidebar (Offcanvas) -->
+<div class="offcanvas offcanvas-start glass-card border-0 shadow-lg" tabindex="-1" id="historySidebar" aria-labelledby="historySidebarLabel" style="width: 320px; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px);">
+    <div class="offcanvas-header border-bottom border-light py-4">
+        <h5 class="offcanvas-title fw-bold text-gradient" id="historySidebarLabel">
+            <i class="bi bi-clock-history me-2"></i>Chat History
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <div id="history-loading" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+            <p class="small text-muted mt-2">Loading sessions...</p>
+        </div>
+        <div id="history-empty" class="text-center py-5 px-4" style="display: none;">
+            <i class="bi bi-chat-dots fs-1 text-muted opacity-25"></i>
+            <p class="small text-muted mt-2">No past conversations found. Start a new one!</p>
+        </div>
+        <div class="list-group list-group-flush" id="sessions-list">
+            <!-- Sessions will be loaded here -->
+        </div>
+    </div>
+    <div class="offcanvas-footer p-3 border-top border-light">
+        <button class="btn btn-primary w-100 rounded-pill" id="sidebar-new-chat">
+            <i class="bi bi-plus-lg me-1"></i>New Conversation
+        </button>
+    </div>
+</div>
+
+<style>
+.history-item {
+    padding: 1rem 1.5rem;
+    border-left: 4px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.history-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-left-color: var(--primary);
+}
+.history-item.active {
+    background: rgba(99, 102, 241, 0.1);
+    border-left-color: var(--primary);
+}
+.history-date { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.history-preview { font-size: 0.85rem; color: var(--text-main); font-weight: 500; }
+</style>
+
+<style>
+.btn-white { background: white; color: var(--text-main); transition: all 0.2s; }
+.btn-white:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+.recording-visualizer {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+.main-mic-btn {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.main-mic-btn:hover { transform: scale(1.05); }
+.main-mic-btn:active { transform: scale(0.95); }
+
+.pulse-ring {
+    position: absolute;
+    top: -10px; left: -10px; right: -10px; bottom: -10px;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    opacity: 0;
+}
+.is-recording .pulse-ring {
+    animation: pulse 2.5s cubic-bezier(0.12, 0, 0.39, 0) infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+</style>
 
 <style>
 .recording-visualizer {
