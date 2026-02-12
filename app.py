@@ -184,31 +184,31 @@ def _groq_reply(message: str, system_prompt: str) -> str:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
-    # Try a few different models just in case
-    for model in ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"]:
-        payload = {
-            "model": model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ],
-            "temperature": 0.5,
-            "max_tokens": 1024
-        }
-        try:
-            r = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=8)
-            j = r.json()
-            if "choices" in j:
-                return j.get("choices", [{}])[0].get("message", {}).get("content", None)
-            else:
-                print(f"DEBUG: Groq {model} failed: {j.get('error', {}).get('message')}")
-        except requests.exceptions.Timeout:
-            print(f"DEBUG: Groq {model} timed out. Trying next...")
-            continue
-        except Exception as e:
-            print(f"DEBUG: Groq {model} error: {e}")
-            continue
-    return None
+        # Try a few different models just in case
+        for model in ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"]:
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message}
+                ],
+                "temperature": 0.5,
+                "max_tokens": 1024
+            }
+            try:
+                r = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=8)
+                j = r.json()
+                if "choices" in j:
+                    return j.get("choices", [{}])[0].get("message", {}).get("content", None)
+                else:
+                    print(f"DEBUG: Groq {model} failed: {j.get('error', {}).get('message')}")
+            except requests.exceptions.Timeout:
+                print(f"DEBUG: Groq {model} timed out. Trying next...")
+                continue
+            except Exception as e:
+                print(f"DEBUG: Groq {model} error: {e}")
+                continue
+        return None
     except Exception as e:
         print(f"Groq Exception: {e}")
         return None
