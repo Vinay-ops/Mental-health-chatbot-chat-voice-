@@ -260,18 +260,21 @@ def create_user(email: str, password_hash: str, name: str):
         return email
 
     conn = get_db_connection()
-    if not conn: return None
+    if not conn:
+        return None
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO users (email, password_hash, name, created_at) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO users (email, password_hash, name, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
             (email, password_hash, name, datetime.utcnow())
         )
-        new_id = cursor.lastrowid
+        row = cursor.fetchone()
         conn.commit()
         cursor.close()
         conn.close()
-        return str(new_id)
+        if not row:
+            return None
+        return str(row[0])
     except Exception as e:
         print(f"DEBUG: Error creating user: {e}")
         return None
