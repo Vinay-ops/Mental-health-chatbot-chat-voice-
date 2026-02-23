@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Community - MindCare Navigator{% endblock %}
+
+{% block content %}
+<div class="mesh-gradient"></div>
+
+<section class="py-5 min-vh-100 d-flex align-items-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="card glass-card border-0 shadow-2xl">
+                    <div class="card-header bg-transparent border-bottom border-light py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 fw-bold text-gradient">Community Support Wall</h4>
+                        <span class="badge bg-soft-blue text-primary rounded-pill px-3 py-2">Anonymous, peer-support messages</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted">Name (optional)</label>
+                            <input type="text" class="form-control" id="community-name" placeholder="You can stay Anonymous">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Share a supportive message or how you are feeling</label>
+                            <textarea class="form-control" id="community-message" rows="3" placeholder="Share something kind, hopeful, or how you are feeling today..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end mb-4">
+                            <button class="btn btn-primary rounded-pill px-4" id="community-submit-btn">
+                                <i class="bi bi-send-fill me-1"></i>Post to community
+                            </button>
+                        </div>
+                        <div id="community-feedback" class="small mb-3"></div>
+                        <hr>
+                        <h6 class="fw-semibold mb-3">Recent messages</h6>
+                        <div id="community-posts" style="max-height: 420px; overflow-y: auto;"></div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top border-light text-center small text-muted py-3">
+                        This space is for encouragement and shared feelings, not crisis support or medical advice.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const postsContainer = document.getElementById('community-posts');
+    const feedback = document.getElementById('community-feedback');
+    const nameInput = document.getElementById('community-name');
+    const messageInput = document.getElementById('community-message');
+    const submitBtn = document.getElementById('community-submit-btn');
+
+    async function loadPosts() {
+        try {
+            const res = await fetch('/api/community/posts');
+            const posts = await res.json();
+            if (!Array.isArray(posts) || posts.length === 0) {
+                postsContainer.innerHTML = '<div class="text-muted">No messages yet. You can be the first to share something kind.</div>';
+                return;
+            }
+            postsContainer.innerHTML = posts.map(p => `
+                <div class="border rounded-3 p-3 mb-3 bg-white bg-opacity-75" data-post-id="${p.id}">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold">${p.name}</span>
+                        <span class="text-muted small">${new Date(p.created_at).toLocaleString()}</span>
+                    </div>
+                    <div class="text-muted mb-2">${p.content}</div>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill community-like-btn">
+                        <i class="bi bi-heart-fill me-1"></i>
+                        <span class="community-like-count">${p.likes || 0}</span>
+                    </button>
+                </div>
+            `).join('');
+
+            attachLikeHandlers();
+        } catch (e) {
+            console.error(e);
+            postsContainer.innerHTML = '<div class="text-danger">Could not load messages. Please try again later.</div>';
+        }
+    }
+
+    function attachLikeHandlers() {
+        const likedKey = 'community_liked_posts';
+        let liked = [];
+        try {
+            liked = JSON.parse(localStorage.getItem(likedKey) || '[]');
+        } catch (e) {
+            liked = [];
+        }
+        document.querySelectorAll('.community-like-btn').forEach(btn => {
+            const wrapper = btn.closest('[data-post-id]');
+            if (!wrapper) return;
+            const postId = parseInt(wrapper.getAttribute('data-post-id'), 10);
+            const likedCountSpan = btn.querySelector('.community-like-count');
+            if (liked.includes(postId)) {
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-primary');
+            }
+            btn.addEventListener('click', async () => {
+                if (liked.includes(postId)) {
+                    return;
+                }
+                try {
+                    const res = await fetch(`/api/community/posts/${postId}/like`, { method: 'POST' });
+                    const data = await res.json();
+                    if (res.ok && typeof data.likes === 'number') {
+                        liked.push(postId);
+                        localStorage.setItem(likedKey, JSON.stringify(liked));
+                        likedCountSpan.textContent = data.likes;
+                        btn.classList.remove('btn-outline-primary');
+                        btn.classList.add('btn-primary');
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+        });
+    }
+
+    submitBtn.addEventListener('click', async () => {
+        const name = nameInput.value.trim();
+        const content = messageInput.value.trim();
+        if (!content) {
+            feedback.innerHTML = '<span class="text-danger">Please write a short message before posting.</span>';
+            return;
+        }
+        feedback.innerHTML = '<span class="text-muted">Posting...</span>';
+        submitBtn.disabled = true;
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch('/api/community/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ name, content })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                messageInput.value = '';
+                feedback.innerHTML = '<span class="text-success">Thank you for sharing. Your message is now visible to others.</span>';
+                loadPosts();
+            } else {
+                feedback.innerHTML = '<span class="text-danger">Could not post message. Please try again.</span>';
+            }
+        } catch (e) {
+            console.error(e);
+            feedback.innerHTML = '<span class="text-danger">Something went wrong. Please try again later.</span>';
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    loadPosts();
+});
+</script>
+{% endblock %}

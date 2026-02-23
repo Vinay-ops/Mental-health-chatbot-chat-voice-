@@ -30,7 +30,6 @@ app = Flask(__name__)
 session_memory = {} # {session_id: [messages]}
 session_sentiment = {} # {session_id: current_mood}
 
-# --- Configuration ---
 SAFE_SYSTEM_PROMPT = (
     "You are MindCare Navigator, a specialized mental health AI assistant. "
     "Your PRIMARY identity is a compassionate, empathetic mental health companion for the MindCare Navigator project. "
@@ -38,7 +37,8 @@ SAFE_SYSTEM_PROMPT = (
     "STRICT TOPIC LIMIT: You ONLY answer questions related to mental health, emotional well-being, stress management, and the MindCare Navigator project itself. "
     "If a user asks about unrelated topics (like general coding, weather, politics, or general knowledge), you MUST politely refuse and redirect them back to mental health: "
     "'I am specialized in mental health support for MindCare Navigator. I cannot assist with that topic, but I'm here to listen to how you're feeling.' "
-    "Your tone must be warm, validating, and focused on emotional well-being. "
+    "Your tone must be warm, friendly, validating, and focused on emotional well-being. "
+    "Speak like a caring friend who explains things gently, in simple sentences, and keeps responses supportive and hopeful. "
     "When a user shares a problem, first validate their feeling (e.g., 'It sounds like you're going through a lot, and it's completely understandable to feel this way'). "
     "STRICT SAFETY PROTOCOL: "
     "1. If the user mentions self-harm, suicide, or severe crisis, you MUST provide a supportive message followed by specific crisis resources (e.g., '988 Suicide & Crisis Lifeline' in the US, or international equivalents). "
@@ -46,6 +46,41 @@ SAFE_SYSTEM_PROMPT = (
     "3. DO NOT prescribe medication or specific medical treatments. "
     "4. Respond ONLY in the requested language."
 )
+
+NEAREST_PSYCHOLOGISTS = {
+    "mumbai": [
+        {"name": "Dr. A. Sharma, Clinical Psychologist", "address": "Andheri West, Mumbai", "phone": "+91-98765-00001"},
+        {"name": "MindCare Clinic Mumbai", "address": "Bandra East, Mumbai", "phone": "+91-98765-00002"}
+    ],
+    "pune": [
+        {"name": "Dr. R. Kulkarni, Counseling Psychologist", "address": "Kothrud, Pune", "phone": "+91-98765-00003"},
+        {"name": "Hope Mental Wellness Center", "address": "Viman Nagar, Pune", "phone": "+91-98765-00004"}
+    ],
+    "delhi": [
+        {"name": "Dr. S. Verma, Psychotherapist", "address": "South Extension, New Delhi", "phone": "+91-98765-00005"},
+        {"name": "Calm Mind Clinic", "address": "Dwarka, New Delhi", "phone": "+91-98765-00006"}
+    ],
+    "bengaluru": [
+        {"name": "Serene Minds Center", "address": "Indiranagar, Bengaluru", "phone": "+91-98765-00007"},
+        {"name": "Dr. K. Rao, Clinical Psychologist", "address": "Koramangala, Bengaluru", "phone": "+91-98765-00008"}
+    ],
+    "bangalore": [
+        {"name": "Serene Minds Center", "address": "Indiranagar, Bengaluru", "phone": "+91-98765-00007"},
+        {"name": "Dr. K. Rao, Clinical Psychologist", "address": "Koramangala, Bengaluru", "phone": "+91-98765-00008"}
+    ],
+    "chennai": [
+        {"name": "Calm Waves Wellness", "address": "T. Nagar, Chennai", "phone": "+91-98765-00009"},
+        {"name": "Dr. L. Iyer, Counseling Psychologist", "address": "Anna Nagar, Chennai", "phone": "+91-98765-00010"}
+    ],
+    "hyderabad": [
+        {"name": "HopeCare Psychological Services", "address": "Banjara Hills, Hyderabad", "phone": "+91-98765-00011"},
+        {"name": "Mindful Living Clinic", "address": "Gachibowli, Hyderabad", "phone": "+91-98765-00012"}
+    ],
+    "kolkata": [
+        {"name": "Dr. P. Mukherjee, Psychologist", "address": "Salt Lake, Kolkata", "phone": "+91-98765-00013"},
+        {"name": "Harmony Mental Wellness", "address": "Park Street, Kolkata", "phone": "+91-98765-00014"}
+    ]
+}
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change")
@@ -228,6 +263,10 @@ def about():
 @app.route('/features')
 def features():
     return render_template('features.html')
+
+@app.route('/locator')
+def locator():
+    return render_template('locator.html')
 
 @app.route('/chat')
 def chat():
@@ -452,6 +491,75 @@ def contact_api():
     print(f"Contact Form Submission: {name} ({email}) - {message}")
     
     return jsonify({"success": "Message sent successfully"})
+
+@app.route('/api/psychologists', methods=['POST'])
+def psychologists_api():
+    data = request.json or {}
+    location_raw = data.get('location') or ""
+    location = location_raw.strip().lower()
+    results = []
+    for key, items in NEAREST_PSYCHOLOGISTS.items():
+        if key in location:
+            results = items
+            break
+    if not results:
+        return jsonify({
+            "results": [],
+            "message": "I could not find specific psychologists for your area, but you can contact your nearest hospital, mental health helpline, or licensed psychologist directory for local support."
+        })
+    return jsonify({"results": results})
+
+@app.route('/community')
+def community_page():
+    return render_template('community.html')
+
+@app.route('/api/community/posts', methods=['GET', 'POST'])
+def community_posts_api():
+    if request.method == 'POST':
+        data = request.json or {}
+        content = (data.get('content') or "").strip()
+        name = (data.get('name') or "Anonymous").strip() or "Anonymous"
+        if not content:
+            return jsonify({"error": "Message is required"}), 400
+
+        user_id = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                decoded = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+                user_id = decoded['sub']
+            except Exception:
+                user_id = None
+
+        ok = db.add_community_post(user_id, name, content)
+        if not ok:
+            return jsonify({"error": "Could not save message"}), 500
+        return jsonify({"success": True})
+
+    posts = db.get_community_posts()
+    normalized = []
+    for p in posts:
+        created = p.get("created_at") or p.get("created_at".lower()) or p.get("created_at".upper())
+        if isinstance(created, datetime):
+            created_str = created.isoformat()
+        else:
+            created_str = str(created)
+        normalized.append({
+            "id": p.get("id"),
+            "name": p.get("name") or "Anonymous",
+            "content": p.get("content"),
+            "created_at": created_str,
+            "likes": p.get("likes", 0)
+        })
+    return jsonify(normalized)
+
+@app.route('/api/community/posts/<int:post_id>/like', methods=['POST'])
+def community_like_post(post_id: int):
+    likes = db.like_community_post(post_id)
+    if likes is None:
+        return jsonify({"error": "Could not like post"}), 400
+    return jsonify({"likes": likes})
 
 if __name__ == '__main__':
     # Initialize DB Schema once at startup

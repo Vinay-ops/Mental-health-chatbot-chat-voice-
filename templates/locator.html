@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Find Help Near You - MindCare Navigator{% endblock %}
+
+{% block content %}
+<div class="mesh-gradient"></div>
+
+<section class="py-5 min-vh-100 d-flex align-items-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card glass-card border-0 shadow-2xl overflow-hidden">
+                    <div class="card-header bg-transparent border-bottom border-light py-3 px-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <div>
+                                <h4 class="mb-1 fw-bold text-gradient">Nearest Psychologist & Support</h4>
+                                <p class="mb-0 text-muted small">Enter your location to see Google Maps and nearby suggestions.</p>
+                            </div>
+                            <span class="badge bg-soft-blue text-primary rounded-pill px-3 py-2">
+                                <i class="bi bi-shield-heart me-1"></i>Information only • Not emergency care
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-lg-4">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">City or area</label>
+                                    <input type="text" class="form-control" id="locator-location-input" placeholder="e.g. Andheri, Mumbai or Kothrud, Pune">
+                                </div>
+                                <button class="btn btn-primary w-100 mb-3" id="locator-search-btn">
+                                    <i class="bi bi-search me-1"></i>Search location
+                                </button>
+                                <div id="locator-feedback" class="small mb-3"></div>
+                                <div id="locator-results" class="small"></div>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="rounded-4 overflow-hidden shadow-sm border bg-white" style="min-height: 360px;">
+                                    <iframe id="locator-map-frame"
+                                            src="https://www.google.com/maps?q=India%20psychologist&output=embed"
+                                            width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"
+                                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                </div>
+                                <p class="mt-2 text-muted small">
+                                    Map powered by Google Maps. Results are approximate. Please verify details before visiting.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top border-light text-center small text-muted py-3">
+                        If you are in immediate danger or crisis, contact your local emergency number or a crisis helpline right away.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const locationInput = document.getElementById('locator-location-input');
+    const searchBtn = document.getElementById('locator-search-btn');
+    const feedback = document.getElementById('locator-feedback');
+    const resultsBox = document.getElementById('locator-results');
+    const mapFrame = document.getElementById('locator-map-frame');
+
+    async function runSearch() {
+        const location = (locationInput.value || '').trim();
+        if (!location) {
+            feedback.innerHTML = '<span class="text-danger">Please enter a city or area.</span>';
+            return;
+        }
+        feedback.innerHTML = '<span class="text-muted">Finding options for you...</span>';
+        resultsBox.innerHTML = '';
+
+        const query = encodeURIComponent(location + ' psychologist');
+        mapFrame.src = 'https://www.google.com/maps?q=' + query + '&output=embed';
+
+        try {
+            const res = await fetch('/api/psychologists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ location })
+            });
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+                const list = data.results.map(p => `
+                    <div class="border rounded-3 p-2 mb-2 bg-white bg-opacity-75">
+                        <div class="fw-semibold">${p.name}</div>
+                        <div class="text-muted">${p.address}</div>
+                        <div class="text-primary">${p.phone}</div>
+                    </div>
+                `).join('');
+                resultsBox.innerHTML = list;
+                feedback.innerHTML = '<span class="text-success">Here are some suggestions near your location.</span>';
+            } else {
+                const message = data.message || 'No specific psychologists found in our sample list for this area.';
+                resultsBox.innerHTML = '<div class="text-muted">' + message + '</div>';
+                feedback.innerHTML = '<span class="text-muted">Map still shows general results for your location.</span>';
+            }
+        } catch (e) {
+            console.error(e);
+            feedback.innerHTML = '<span class="text-danger">Could not fetch suggestions. Map is still updated for your search.</span>';
+        }
+    }
+
+    searchBtn.addEventListener('click', runSearch);
+    locationInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            runSearch();
+        }
+    });
+});
+</script>
+{% endblock %}
+

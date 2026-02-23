@@ -5,5 +5,5 @@ python-dotenv==1.0.0
 google-genai
 passlib[bcrypt]==1.7.4
 PyJWT==2.8.0
-mysql-connector-python==8.2.0
+psycopg2-binary==2.9.9
 flask-bcrypt==1.0.1

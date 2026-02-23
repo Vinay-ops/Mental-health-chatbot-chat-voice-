@@ -1,15 +1,10 @@
 import os
 import sys
 import json
-import mysql.connector
-from mysql.connector import errorcode
 from datetime import datetime
 
-# MySQL Connection Setup
-MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
-MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "vinay")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "rm")
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # Fallback JSON File
 JSON_DB_FILE = "local_db.json"
@@ -18,12 +13,12 @@ _use_json_fallback = False
 
 def _load_json_db():
     if not os.path.exists(JSON_DB_FILE):
-        return {"users": [], "chat_logs": []}
+        return {"users": [], "chat_logs": [], "community_posts": []}
     try:
         with open(JSON_DB_FILE, 'r') as f:
             return json.load(f)
     except Exception:
-        return {"users": [], "chat_logs": []}
+        return {"users": [], "chat_logs": [], "community_posts": []}
 
 def _save_json_db(data):
     try:
@@ -35,44 +30,33 @@ def _save_json_db(data):
 def get_db_connection():
     global _use_json_fallback
     try:
-        conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            database=MYSQL_DATABASE,
-            connect_timeout=5
-        )
-        return conn
-    except mysql.connector.Error as err:
-        print(f"DEBUG: MySQL Connection Error: {err}")
-        if err.errno == errorcode.ER_BAD_DB_ERROR:
-            # Try connecting without database to create it
-            try:
-                temp_conn = mysql.connector.connect(
-                    host=MYSQL_HOST,
-                    user=MYSQL_USER,
-                    password=MYSQL_PASSWORD
-                )
-                cursor = temp_conn.cursor()
-                cursor.execute(f"CREATE DATABASE {MYSQL_DATABASE}")
-                temp_conn.close()
-                return mysql.connector.connect(
-                    host=MYSQL_HOST,
-                    user=MYSQL_USER,
-                    password=MYSQL_PASSWORD,
-                    database=MYSQL_DATABASE
-                )
-            except Exception as e:
-                print(f"DEBUG: Failed to create database: {e}")
-                _use_json_fallback = True
-                return None
+        database_url = os.getenv("DATABASE_URL")
+        if database_url:
+            conn = psycopg2.connect(database_url, connect_timeout=10)
         else:
-            # For other errors, we might want to fallback but let's see
-            # If it's a transient error, we shouldn't permanently switch to fallback
-            # But for now, let's keep it as is but with better logging
-            print(f"DEBUG: Switching to Local JSON Fallback for this session.")
-            _use_json_fallback = True
-            return None
+            host = os.getenv("PG_HOST", "localhost")
+            port = int(os.getenv("PG_PORT", "6543"))
+            dbname = os.getenv("PG_DATABASE", "postgres")
+            user = os.getenv("PG_USER", "postgres")
+            password = os.getenv("PG_PASSWORD", "")
+
+            connect_kwargs = {
+                "host": host,
+                "port": port,
+                "dbname": dbname,
+                "user": user,
+                "password": password,
+                "connect_timeout": 10,
+            }
+            if host.endswith("supabase.co"):
+                connect_kwargs["sslmode"] = "require"
+
+            conn = psycopg2.connect(**connect_kwargs)
+        return conn
+    except Exception as err:
+        print(f"DEBUG: Postgres Connection Error: {err}")
+        _use_json_fallback = True
+        return None
 
 _connection_checked = False
 
@@ -88,8 +72,7 @@ def check_connection():
         _use_json_fallback = False
         return True
     
-    # If get_db_connection failed, _use_json_fallback is already True
-    return _use_json_fallback
+    return False
 
 def ensure_schema():
     conn = get_db_connection()
@@ -98,28 +81,43 @@ def ensure_schema():
         return
     try:
         cursor = conn.cursor()
-        # Users table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 name VARCHAR(255),
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        # Chat logs table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS chat_logs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 role VARCHAR(50) NOT NULL,
                 content TEXT NOT NULL,
                 user_id VARCHAR(255),
                 session_id VARCHAR(255),
-                ts DATETIME DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_user_session (user_id, session_id)
+                ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_user_session
+            ON chat_logs (user_id, session_id)
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS community_posts (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255),
+                name VARCHAR(255),
+                content TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                likes INT DEFAULT 0
+            )
+        """)
+        try:
+            cursor.execute("ALTER TABLE community_posts ADD COLUMN likes INT DEFAULT 0")
+        except Exception:
+            pass
         conn.commit()
         cursor.close()
         conn.close()
@@ -175,7 +173,7 @@ def get_chat_history(user_id: str, session_id: str):
     conn = get_db_connection()
     if not conn: return []
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         if user_id:
             cursor.execute(
                 "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id = %s AND session_id = %s ORDER BY ts ASC",
@@ -237,7 +235,7 @@ def get_user_by_email(email: str):
     conn = get_db_connection()
     if not conn: return None
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("SELECT id as _id, email, password_hash, name FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
         cursor.close()
@@ -246,7 +244,6 @@ def get_user_by_email(email: str):
     except Exception as e:
         print(f"DEBUG: Error getting user: {e}")
         return None
-
 def create_user(email: str, password_hash: str, name: str):
     if _use_json_fallback:
         data = _load_json_db()
@@ -277,4 +274,88 @@ def create_user(email: str, password_hash: str, name: str):
         return str(new_id)
     except Exception as e:
         print(f"DEBUG: Error creating user: {e}")
+        return None
+
+def add_community_post(user_id: str, name: str, content: str):
+    if _use_json_fallback:
+        data = _load_json_db()
+        posts = data.get("community_posts") or []
+        posts.append({
+            "user_id": str(user_id) if user_id else None,
+            "name": name,
+            "content": content,
+            "created_at": datetime.utcnow().isoformat(),
+            "likes": 0
+        })
+        data["community_posts"] = posts
+        _save_json_db(data)
+        return True
+
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO community_posts (user_id, name, content, created_at, likes) VALUES (%s, %s, %s, %s, %s)",
+            (str(user_id) if user_id else None, name, content, datetime.utcnow(), 0)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"DEBUG: Error adding community post: {e}")
+        return False
+
+def get_community_posts(limit: int = 30):
+    if _use_json_fallback:
+        data = _load_json_db()
+        posts = data.get("community_posts") or []
+        posts_sorted = sorted(posts, key=lambda p: p.get("created_at", ""), reverse=True)
+        return posts_sorted[:limit]
+
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(
+            "SELECT id, user_id, name, content, created_at, likes FROM community_posts ORDER BY created_at DESC LIMIT %s",
+            (limit,)
+        )
+        posts = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return posts
+    except Exception as e:
+        print(f"DEBUG: Error getting community posts: {e}")
+        return []
+
+def like_community_post(post_id: int):
+    if _use_json_fallback:
+        return None
+
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE community_posts SET likes = COALESCE(likes, 0) + 1 WHERE id = %s",
+            (post_id,)
+        )
+        conn.commit()
+        cursor.execute(
+            "SELECT likes FROM community_posts WHERE id = %s",
+            (post_id,)
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not row:
+            return None
+        return row[0]
+    except Exception as e:
+        print(f"DEBUG: Error liking community post: {e}")
         return None

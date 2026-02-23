@@ -29,7 +29,9 @@
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'home' %}active{% endif %}" href="{{ url_for('home') }}" data-t="nav_home">Home</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}" data-t="nav_about">About</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'features' %}active{% endif %}" href="{{ url_for('features') }}" data-t="nav_features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'locator' %}active{% endif %}" href="{{ url_for('locator') }}" data-t="nav_locator">Nearby Help</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'chat' %}active{% endif %}" href="{{ url_for('chat') }}" data-t="nav_chat">Start Chat</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'community_page' %}active{% endif %}" href="{{ url_for('community_page') }}">Community</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'contact' %}active{% endif %}" href="{{ url_for('contact') }}" data-t="nav_support">Support</a></li>
                     
                     <!-- Language Selector -->

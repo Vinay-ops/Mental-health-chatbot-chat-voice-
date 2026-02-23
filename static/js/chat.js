@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.innerHTML = `
                 <div class="d-flex align-items-start gap-3">
                     <div class="ai-icon-container"><i class="bi bi-robot"></i></div>
-                    <div class="message-content">${text}</div>
+                        <div class="message-content">${text}</div>
                 </div>
             `;
         }
@@ -450,9 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (premiumVoice) voice = premiumVoice;
         if (voice) utter.voice = voice;
 
-        utter.rate = 1.0;
-        utter.pitch = 1.0;
-        utter.volume = 1.0;
+        utter.rate = 0.7;
+        utter.pitch = 0.9;
+        utter.volume = 0.95;
         
         utter.onend = () => {
             if (currentMode === 'voice') {
