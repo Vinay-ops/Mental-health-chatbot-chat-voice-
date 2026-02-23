@@ -11,30 +11,30 @@
             <div class="col-lg-9">
                 <div class="card glass-card border-0 shadow-2xl">
                     <div class="card-header bg-transparent border-bottom border-light py-3 px-4 d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0 fw-bold text-gradient">Community Support Wall</h4>
-                        <span class="badge bg-soft-blue text-primary rounded-pill px-3 py-2">Anonymous, peer-support messages</span>
+                        <h4 class="mb-0 fw-bold text-gradient" data-t="community_title">Community Support Wall</h4>
+                        <span class="badge bg-soft-blue text-primary rounded-pill px-3 py-2" data-t="community_badge">Anonymous, peer-support messages</span>
                     </div>
                     <div class="card-body p-4">
                         <div class="mb-4">
-                            <label class="form-label small fw-semibold text-muted">Name (optional)</label>
-                            <input type="text" class="form-control" id="community-name" placeholder="You can stay Anonymous">
+                            <label class="form-label small fw-semibold text-muted" data-t="community_name_label">Name (optional)</label>
+                            <input type="text" class="form-control" id="community-name" data-t="community_name_placeholder" placeholder="You can stay Anonymous">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted">Share a supportive message or how you are feeling</label>
-                            <textarea class="form-control" id="community-message" rows="3" placeholder="Share something kind, hopeful, or how you are feeling today..."></textarea>
+                            <label class="form-label small fw-semibold text-muted" data-t="community_message_label">Share a supportive message or how you are feeling</label>
+                            <textarea class="form-control" id="community-message" rows="3" data-t="community_message_placeholder" placeholder="Share something kind, hopeful, or how you are feeling today..."></textarea>
                         </div>
                         <div class="d-flex justify-content-end mb-4">
                             <button class="btn btn-primary rounded-pill px-4" id="community-submit-btn">
-                                <i class="bi bi-send-fill me-1"></i>Post to community
+                                <i class="bi bi-send-fill me-1"></i><span data-t="community_submit_btn">Post to community</span>
                             </button>
                         </div>
                         <div id="community-feedback" class="small mb-3"></div>
                         <hr>
-                        <h6 class="fw-semibold mb-3">Recent messages</h6>
+                        <h6 class="fw-semibold mb-3" data-t="community_recent">Recent messages</h6>
                         <div id="community-posts" style="max-height: 420px; overflow-y: auto;"></div>
                     </div>
                     <div class="card-footer bg-transparent border-top border-light text-center small text-muted py-3">
-                        This space is for encouragement and shared feelings, not crisis support or medical advice.
+                        <span data-t="community_footer">This space is for encouragement and shared feelings, not crisis support or medical advice.</span>
                     </div>
                 </div>
             </div>
@@ -52,12 +52,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('community-message');
     const submitBtn = document.getElementById('community-submit-btn');
 
+    function t(key) {
+        const lang = localStorage.getItem('selectedLanguage') || 'en';
+        if (window.translations && translations[lang] && translations[lang][key]) {
+            return translations[lang][key];
+        }
+        return key;
+    }
+
     async function loadPosts() {
         try {
             const res = await fetch('/api/community/posts');
             const posts = await res.json();
             if (!Array.isArray(posts) || posts.length === 0) {
-                postsContainer.innerHTML = '<div class="text-muted">No messages yet. You can be the first to share something kind.</div>';
+                postsContainer.innerHTML = `<div class="text-muted">${t('community_no_messages')}</div>`;
                 return;
             }
             postsContainer.innerHTML = posts.map(p => `
@@ -77,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             attachLikeHandlers();
         } catch (e) {
             console.error(e);
-            postsContainer.innerHTML = '<div class="text-danger">Could not load messages. Please try again later.</div>';
+            postsContainer.innerHTML = `<div class="text-danger">${t('community_load_error')}</div>`;
         }
     }
 
@@ -123,10 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = nameInput.value.trim();
         const content = messageInput.value.trim();
         if (!content) {
-            feedback.innerHTML = '<span class="text-danger">Please write a short message before posting.</span>';
+            feedback.innerHTML = `<span class="text-danger">${t('community_feedback_required')}</span>`;
             return;
         }
-        feedback.innerHTML = '<span class="text-muted">Posting...</span>';
+        feedback.innerHTML = `<span class="text-muted">${t('community_feedback_posting')}</span>`;
         submitBtn.disabled = true;
         try {
             const token = localStorage.getItem('authToken');
@@ -141,14 +149,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (res.ok && data.success) {
                 messageInput.value = '';
-                feedback.innerHTML = '<span class="text-success">Thank you for sharing. Your message is now visible to others.</span>';
+                feedback.innerHTML = `<span class="text-success">${t('community_feedback_success')}</span>`;
                 loadPosts();
             } else {
-                feedback.innerHTML = '<span class="text-danger">Could not post message. Please try again.</span>';
+                feedback.innerHTML = `<span class="text-danger">${t('community_feedback_fail')}</span>`;
             }
         } catch (e) {
             console.error(e);
-            feedback.innerHTML = '<span class="text-danger">Something went wrong. Please try again later.</span>';
+            feedback.innerHTML = `<span class="text-danger">${t('community_feedback_error')}</span>`;
         } finally {
             submitBtn.disabled = false;
         }

@@ -363,7 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function stopRecording() {
         if (isRecording) {
-            recognition.stop();
+            if (recognition) {
+                recognition.stop();
+            }
             isRecording = false;
             recordingVisualizer.classList.remove('is-recording');
             voiceStatusText.textContent = t('voice_click_to_start');
@@ -385,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stopRecording();
         } else {
             const currentLang = localStorage.getItem('selectedLanguage') || 'en';
-            const langMap = { 'en': 'en-US', 'hi': 'hi-IN', 'mr': 'mr-IN' };
+            const langMap = { en: 'en-US', hi: 'hi-IN', mr: 'mr-IN' };
             recognition.lang = langMap[currentLang] || 'en-US';
             try {
                 recognition.start();
@@ -429,26 +431,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentLang = localStorage.getItem('selectedLanguage') || 'en';
         
         const langMap = {
-            'en': 'en-US',
-            'hi': 'hi-IN',
-            'mr': 'hi-IN' 
+            en: 'en-US',
+            hi: 'hi-IN',
+            mr: 'mr-IN'
         };
         
-        const targetLang = langMap[currentLang] || 'en-US';
+        let targetLang = langMap[currentLang] || 'en-US';
         utter.lang = targetLang;
         
         // Try to find the best voice
         if (voices.length === 0) loadVoices();
         
-        // Find voice for specific language
         let voice = voices.find(v => v.lang === targetLang || v.lang.replace('_', '-') === targetLang);
         
         // Preference: Google or Natural sounding voices
-        const premiumVoice = voices.find(v => (v.lang === targetLang || v.lang.replace('_', '-') === targetLang) && 
-                                              (v.name.includes('Google') || v.name.includes('Natural')));
+        let premiumVoice = voices.find(v => (v.lang === targetLang || v.lang.replace('_', '-') === targetLang) && 
+                                            (v.name.includes('Google') || v.name.includes('Natural')));
         
-        if (premiumVoice) voice = premiumVoice;
-        if (voice) utter.voice = voice;
+        if (!voice && targetLang === 'mr-IN') {
+            const fallbackLang = 'hi-IN';
+            premiumVoice = voices.find(v => (v.lang === fallbackLang || v.lang.replace('_', '-') === fallbackLang) &&
+                                            (v.name.includes('Google') || v.name.includes('Natural')));
+            voice = premiumVoice || voices.find(v => v.lang === fallbackLang || v.lang.replace('_', '-') === fallbackLang) || voice;
+            if (!voice) {
+                targetLang = 'en-IN';
+            }
+        }
+
+        if (premiumVoice && premiumVoice !== voice && (premiumVoice.lang === targetLang || premiumVoice.lang.replace('_', '-') === targetLang)) {
+            voice = premiumVoice;
+        }
+
+        if (voice) {
+            utter.voice = voice;
+        }
 
         utter.rate = 0.7;
         utter.pitch = 0.9;

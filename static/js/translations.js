@@ -110,7 +110,23 @@ const translations = {
         about_different_h: "Why We're Different",
         about_different_p: "Unlike diagnostic chatbots that might attempt to label conditions, we focus purely on navigation, grounding, and referral awareness. We are a bridge, not a doctor.",
         about_safety_h: "Focus on Accessibility and Safety",
-        about_safety_p: "Our interface is designed to be minimal and low-bandwidth friendly, ensuring that anyone with a basic internet connection can access the support they need."
+        about_safety_p: "Our interface is designed to be minimal and low-bandwidth friendly, ensuring that anyone with a basic internet connection can access the support they need.",
+        community_title: "Community Support Wall",
+        community_badge: "Anonymous, peer-support messages",
+        community_name_label: "Name (optional)",
+        community_name_placeholder: "You can stay anonymous",
+        community_message_label: "Share a supportive message or how you are feeling",
+        community_message_placeholder: "Share something kind, hopeful, or how you are feeling today...",
+        community_submit_btn: "Post to community",
+        community_recent: "Recent messages",
+        community_footer: "This space is for encouragement and shared feelings, not crisis support or medical advice.",
+        community_no_messages: "No messages yet. You can be the first to share something kind.",
+        community_load_error: "Could not load messages. Please try again later.",
+        community_feedback_required: "Please write a short message before posting.",
+        community_feedback_posting: "Posting...",
+        community_feedback_success: "Thank you for sharing. Your message is now visible to others.",
+        community_feedback_fail: "Could not post message. Please try again.",
+        community_feedback_error: "Something went wrong. Please try again later."
     },
     hi: {
         nav_home: "होम",
@@ -223,7 +239,23 @@ const translations = {
         about_different_h: "हम अलग क्यों हैं",
         about_different_p: "नैदानिक चैटबॉट्स के विपरीत, जो स्थितियों को लेबल करने का प्रयास कर सकते हैं, हम पूरी तरह से नेविगेशन, ग्राउंडिंग और रेफरल जागरूकता पर ध्यान केंद्रित करते हैं। हम एक सेतु हैं, डॉक्टर नहीं।",
         about_safety_h: "सुलभता और सुरक्षा पर ध्यान",
-        about_safety_p: "हमारा इंटरफ़ेस न्यूनतम और कम-बैंडविड्थ के अनुकूल होने के लिए डिज़ाइन किया गया है, यह सुनिश्चित करता है कि बुनियादी इंटरनेट कनेक्शन वाला कोई भी व्यक्ति अपनी ज़रूरत की सहायता प्राप्त कर सके।"
+        about_safety_p: "हमारा इंटरफ़ेस न्यूनतम और कम-बैंडविड्थ के अनुकूल होने के लिए डिज़ाइन किया गया है, यह सुनिश्चित करता है कि बुनियादी इंटरनेट कनेक्शन वाला कोई भी व्यक्ति अपनी ज़रूरत की सहायता प्राप्त कर सके।",
+        community_title: "समुदाय समर्थन दीवार",
+        community_badge: "अनाम, सहकर्मी-सहायता संदेश",
+        community_name_label: "नाम (वैकल्पिक)",
+        community_name_placeholder: "आप गुमनाम रह सकते हैं",
+        community_message_label: "एक सहायक संदेश या आप कैसा महसूस कर रहे हैं साझा करें",
+        community_message_placeholder: "कुछ दयालु, आशावान या आज आप कैसा महसूस कर रहे हैं, साझा करें...",
+        community_submit_btn: "समुदाय में पोस्ट करें",
+        community_recent: "हाल के संदेश",
+        community_footer: "यह स्थान प्रोत्साहन और साझा भावनाओं के लिए है, संकट सहायता या चिकित्सीय सलाह के लिए नहीं।",
+        community_no_messages: "अभी तक कोई संदेश नहीं है। आप कुछ अच्छा साझा करने वाले पहले व्यक्ति बन सकते हैं।",
+        community_load_error: "संदेश लोड नहीं हो सके। कृपया बाद में पुनः प्रयास करें।",
+        community_feedback_required: "पोस्ट करने से पहले कृपया एक छोटा संदेश लिखें।",
+        community_feedback_posting: "पोस्ट कर रहे हैं...",
+        community_feedback_success: "आपका धन्यवाद। आपका संदेश अब अन्य लोगों को दिखाई दे रहा है।",
+        community_feedback_fail: "संदेश पोस्ट नहीं हो सका। कृपया पुनः प्रयास करें।",
+        community_feedback_error: "कुछ गड़बड़ हो गई। कृपया बाद में पुनः प्रयास करें।"
     },
     mr: {
         nav_home: "होम",
@@ -334,7 +366,23 @@ const translations = {
         about_different_h: "आम्ही वेगळे का आहोत",
         about_different_p: "निदानात्मक चॅटबॉट्सच्या उलट, जे परिस्थितीला लेबल लावण्याचा प्रयत्न करू शकतात, आम्ही पूर्णपणे नेव्हिगेशन, ग्राउंडिंग आणि रेफरल जागरूकतेवर लक्ष केंद्रित करतो. आम्ही एक पूल आहोत, डॉक्टर नाही.",
         about_safety_h: "सुलभता आणि सुरक्षिततेवर लक्ष",
-        about_safety_p: "आमचा इंटरफेस किमान आणि कमी-बँडविड्थ अनुकूल असण्यासाठी डिझाइन केला आहे, ज्यामुळे मूलभूत इंटरनेट कनेक्शन असलेला कोणीही त्यांना आवश्यक असलेल्या समर्थनापर्यंत पोहोचू शकेल."
+        about_safety_p: "आमचा इंटरफेस किमान आणि कमी-बँडविड्थ अनुकूल असण्यासाठी डिझाइन केला आहे, ज्यामुळे मूलभूत इंटरनेट कनेक्शन असलेला कोणीही त्यांना आवश्यक असलेल्या समर्थनापर्यंत पोहोचू शकेल.",
+        community_title: "समुदाय समर्थन भिंत",
+        community_badge: "अनाम, सहकारी-समर्थन संदेश",
+        community_name_label: "नाव (ऐच्छिक)",
+        community_name_placeholder: "तुम्ही गुप्त राहू शकता",
+        community_message_label: "एक सहायक संदेश किंवा तुम्हाला कसे वाटत आहे ते लिहा",
+        community_message_placeholder: "काही मनापासून, आशावादी किंवा आज तुम्हाला कसे वाटत आहे ते शेअर करा...",
+        community_submit_btn: "समुदायावर पोस्ट करा",
+        community_recent: "अलीकडील संदेश",
+        community_footer: "हे स्थान प्रोत्साहन आणि सामायिक भावना व्यक्त करण्यासाठी आहे, संकट मदत किंवा वैद्यकीय सल्ल्यासाठी नाही.",
+        community_no_messages: "अजून कोणतेही संदेश नाहीत. तुम्ही काही चांगले शेअर करणारे पहिले व्यक्ती होऊ शकता.",
+        community_load_error: "संदेश लोड करता आले नाहीत. कृपया नंतर पुन्हा प्रयत्न करा.",
+        community_feedback_required: "पोस्ट करण्यापूर्वी कृपया एक छोटा संदेश लिहा.",
+        community_feedback_posting: "पोस्ट करत आहोत...",
+        community_feedback_success: "तुमच्या शेअरिंगबद्दल धन्यवाद. तुमचा संदेश आता इतरांना दिसत आहे.",
+        community_feedback_fail: "संदेश पोस्ट करता आला नाही. कृपया पुन्हा प्रयत्न करा.",
+        community_feedback_error: "काहीतरी चूक झाली. कृपया नंतर पुन्हा प्रयत्न करा."
     }
 };
 
@@ -342,7 +390,7 @@ function applyTranslations(lang) {
     document.querySelectorAll('[data-t]').forEach(el => {
         const key = el.getAttribute('data-t');
         if (translations[lang] && translations[lang][key]) {
-            if (el.tagName === 'INPUT' && el.getAttribute('placeholder')) {
+            if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.getAttribute('placeholder')) {
                 el.placeholder = translations[lang][key];
             } else {
                 el.textContent = translations[lang][key];
