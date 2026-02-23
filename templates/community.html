@@ -90,32 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function attachLikeHandlers() {
-        const likedKey = 'community_liked_posts';
-        let liked = [];
-        try {
-            liked = JSON.parse(localStorage.getItem(likedKey) || '[]');
-        } catch (e) {
-            liked = [];
-        }
         document.querySelectorAll('.community-like-btn').forEach(btn => {
             const wrapper = btn.closest('[data-post-id]');
             if (!wrapper) return;
             const postId = parseInt(wrapper.getAttribute('data-post-id'), 10);
             const likedCountSpan = btn.querySelector('.community-like-count');
-            if (liked.includes(postId)) {
-                btn.classList.remove('btn-outline-primary');
-                btn.classList.add('btn-primary');
-            }
             btn.addEventListener('click', async () => {
-                if (liked.includes(postId)) {
-                    return;
-                }
                 try {
                     const res = await fetch(`/api/community/posts/${postId}/like`, { method: 'POST' });
                     const data = await res.json();
                     if (res.ok && typeof data.likes === 'number') {
-                        liked.push(postId);
-                        localStorage.setItem(likedKey, JSON.stringify(liked));
                         likedCountSpan.textContent = data.likes;
                         btn.classList.remove('btn-outline-primary');
                         btn.classList.add('btn-primary');

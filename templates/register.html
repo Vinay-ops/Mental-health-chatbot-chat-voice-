@@ -59,6 +59,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         const data = await res.json();
         if (res.ok) {
             localStorage.setItem('authToken', data.token);
+            alert('You have registered successfully');
             window.location.href = '/chat';
         } else {
             alert(data.error || 'Registration failed');
