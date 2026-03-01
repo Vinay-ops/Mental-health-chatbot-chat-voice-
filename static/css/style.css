@@ -409,3 +409,24 @@ input::placeholder, textarea::placeholder {
     background: rgba(99, 102, 241, 0.05);
     border-radius: 12px;
 }
+
+/* Input Group Styling */
+.input-group-text {
+    border-radius: 14px 0 0 14px;
+    border: 1px solid #e2e8f0;
+    border-right: none;
+    background: #f8fafc;
+}
+
+.input-group .form-control {
+    border-radius: 0 14px 14px 0;
+}
+
+.input-group .form-control:focus {
+    border-color: var(--primary);
+}
+
+.input-group .form-control:focus + .input-group-text,
+.input-group-text:has(+ .form-control:focus) {
+    border-color: var(--primary);
+}
