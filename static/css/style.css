@@ -360,3 +360,52 @@ input::placeholder, textarea::placeholder {
 .card-header {
     font-weight: 800;
 }
+
+/* User Dropdown Styling */
+.dropdown-toggle::after {
+    margin-left: 0.5rem;
+}
+
+.dropdown-menu {
+    border-radius: 16px;
+    padding: 0.5rem;
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.dropdown-item {
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary);
+}
+
+.dropdown-item.text-danger:hover {
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+}
+
+.dropdown-divider {
+    margin: 0.5rem 0;
+    opacity: 0.15;
+}
+
+/* User Avatar Circle */
+.nav-link .bg-primary {
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+#userDropdown {
+    padding: 0.5rem 1rem;
+}
+
+#userDropdown:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 12px;
+}
