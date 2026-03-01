@@ -15,12 +15,12 @@
                 </div>
                 <h1 class="hero-title fw-bold">
                     <span data-t="hero_title_main">Safe, Voice-Enabled Mental Health</span>
-                    <span class="text-gradient d-block">Support System</span>
+                    <span class="text-gradient d-block" data-t="support_system">Support System</span>
                 </h1>
-                <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;" data-t="hero_subtitle">Empowering your mental well-being with localized AI. Designed for safety, accessibility, and genuine emotional support.</p>
+                <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;" data-t="hero_subtitle_detailed">Empowering your mental well-being with localized AI. Designed for safety, accessibility, and genuine emotional support.</p>
                 <div class="d-flex flex-wrap justify-content-start gap-3">
                     <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5 shadow-lg" data-t="nav_chat">Start Chat</a>
-                    <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5" data-t="chat_action_how">Use Voice</a>
+                    <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5" data-t="voice_mode_btn">Use Voice</a>
                 </div>
             </div>
             <div class="col-lg-5 d-none d-lg-block fade-in-up" style="animation-delay: 0.2s;">
@@ -51,7 +51,7 @@
                     </div>
                     <h4 class="fw-bold mb-3" data-t="index_rag_h">AI + RAG Grounding</h4>
                     <p class="text-muted mb-4" data-t="index_rag_p">Our system uses Retrieval-Augmented Generation to ensure responses are grounded in verified mental health resources.</p>
-                    <a href="{{ url_for('features') }}" class="mt-auto text-decoration-none fw-bold text-primary">Learn more <i class="bi bi-arrow-right ms-1"></i></a>
+                    <a href="{{ url_for('features') }}" class="mt-auto text-decoration-none fw-bold text-primary" data-t="learn_more">Learn more</a> <i class="bi bi-arrow-right ms-1"></i>
                 </div>
             </div>
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
@@ -61,7 +61,7 @@
                     </div>
                     <h4 class="fw-bold mb-3" data-t="index_community_h">Community Focused</h4>
                     <p class="text-muted mb-4" data-t="index_community_p">Designed specifically to reach those who lack access to traditional mental health services through simple, accessible tech.</p>
-                    <a href="{{ url_for('about') }}" class="mt-auto text-decoration-none fw-bold text-accent">Our mission <i class="bi bi-arrow-right ms-1"></i></a>
+                    <a href="{{ url_for('about') }}" class="mt-auto text-decoration-none fw-bold text-accent" data-t="our_mission">Our mission</a> <i class="bi bi-arrow-right ms-1"></i>
                 </div>
             </div>
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
@@ -71,7 +71,7 @@
                     </div>
                     <h4 class="fw-bold mb-3" data-t="index_ethical_h">Ethical & Safe</h4>
                     <p class="text-muted mb-4" data-t="index_ethical_p">We focus on emotional guidance and safety, strictly avoiding medical diagnosis or formal therapy in all interactions.</p>
-                    <a href="{{ url_for('contact') }}" class="mt-auto text-decoration-none fw-bold text-secondary">Get support <i class="bi bi-arrow-right ms-1"></i></a>
+                    <a href="{{ url_for('contact') }}" class="mt-auto text-decoration-none fw-bold text-secondary" data-t="get_support">Get support</a> <i class="bi bi-arrow-right ms-1"></i>
                 </div>
             </div>
         </div>

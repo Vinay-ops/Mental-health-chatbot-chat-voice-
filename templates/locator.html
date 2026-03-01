@@ -13,11 +13,11 @@
                     <div class="card-header bg-transparent border-bottom border-light py-3 px-4">
                         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                             <div>
-                                <h4 class="mb-1 fw-bold text-gradient">Nearest Psychologist & Support</h4>
-                                <p class="mb-0 text-muted small">Enter your location to see Google Maps and nearby suggestions.</p>
+                                <h4 class="mb-1 fw-bold text-gradient" data-t="locator_title">Nearest Psychologist & Support</h4>
+                                <p class="mb-0 text-muted small" data-t="locator_subtitle">Enter your location to see Google Maps and nearby suggestions.</p>
                             </div>
                             <span class="badge bg-soft-blue text-primary rounded-pill px-3 py-2">
-                                <i class="bi bi-shield-heart me-1"></i>Information only • Not emergency care
+                                <i class="bi bi-shield-heart me-1"></i><span data-t="locator_badge">Information only • Not emergency care</span>
                             </span>
                         </div>
                     </div>
@@ -25,11 +25,11 @@
                         <div class="row g-4">
                             <div class="col-lg-4">
                                 <div class="mb-3">
-                                    <label class="form-label small fw-semibold text-muted">City or area</label>
-                                    <input type="text" class="form-control" id="locator-location-input" placeholder="e.g. Andheri, Mumbai or Kothrud, Pune">
+                                    <label class="form-label small fw-semibold text-muted" data-t="locator_label">City or area</label>
+                                    <input type="text" class="form-control" id="locator-location-input" data-t="locator_placeholder" placeholder="e.g. Andheri, Mumbai or Kothrud, Pune">
                                 </div>
                                 <button class="btn btn-primary w-100 mb-3" id="locator-search-btn">
-                                    <i class="bi bi-search me-1"></i>Search location
+                                    <i class="bi bi-search me-1"></i><span data-t="locator_search_btn">Search location</span>
                                 </button>
                                 <div id="locator-feedback" class="small mb-3"></div>
                                 <div id="locator-results" class="small"></div>
@@ -41,14 +41,14 @@
                                             width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"
                                             referrerpolicy="no-referrer-when-downgrade"></iframe>
                                 </div>
-                                <p class="mt-2 text-muted small">
+                                <p class="mt-2 text-muted small" data-t="locator_map_note">
                                     Map powered by Google Maps. Results are approximate. Please verify details before visiting.
                                 </p>
                             </div>
                         </div>
                     </div>
                     <div class="card-footer bg-transparent border-top border-light text-center small text-muted py-3">
-                        If you are in immediate danger or crisis, contact your local emergency number or a crisis helpline right away.
+                        <span data-t="locator_disclaimer">This tool shows nearby resources only. For immediate crisis help, call emergency services.</span>
                     </div>
                 </div>
             </div>
@@ -66,13 +66,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsBox = document.getElementById('locator-results');
     const mapFrame = document.getElementById('locator-map-frame');
 
+    function t(key) {
+        const lang = localStorage.getItem('selectedLanguage') || 'en';
+        if (window.translations && translations[lang] && translations[lang][key]) {
+            return translations[lang][key];
+        }
+        return key;
+    }
+
     async function runSearch() {
         const location = (locationInput.value || '').trim();
         if (!location) {
-            feedback.innerHTML = '<span class="text-danger">Please enter a city or area.</span>';
+            feedback.innerHTML = '<span class="text-danger">' + t('locator_error_empty') + '</span>';
             return;
         }
-        feedback.innerHTML = '<span class="text-muted">Finding options for you...</span>';
+        feedback.innerHTML = '<span class="text-muted">' + t('locator_searching') + '</span>';
         resultsBox.innerHTML = '';
 
         const query = encodeURIComponent(location + ' psychologist');
@@ -94,15 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `).join('');
                 resultsBox.innerHTML = list;
-                feedback.innerHTML = '<span class="text-success">Here are some suggestions near your location.</span>';
+                feedback.innerHTML = '<span class="text-success">' + t('locator_success') + '</span>';
             } else {
                 const message = data.message || 'No specific psychologists found in our sample list for this area.';
                 resultsBox.innerHTML = '<div class="text-muted">' + message + '</div>';
-                feedback.innerHTML = '<span class="text-muted">Map still shows general results for your location.</span>';
+                feedback.innerHTML = '<span class="text-muted">' + t('locator_no_results') + '</span>';
             }
         } catch (e) {
             console.error(e);
-            feedback.innerHTML = '<span class="text-danger">Could not fetch suggestions. Map is still updated for your search.</span>';
+            feedback.innerHTML = '<span class="text-danger">' + t('locator_fetch_error') + '</span>';
         }
     }
 

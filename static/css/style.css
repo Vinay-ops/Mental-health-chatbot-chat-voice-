@@ -15,10 +15,11 @@
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif;
     color: var(--text-main);
     background: var(--background);
     overflow-x: hidden;
+    font-weight: 500;
 }
 
 /* Modern Gradient Background */
@@ -70,7 +71,7 @@ body {
 }
 
 .navbar-brand {
-    font-weight: 800;
+    font-weight: 900;
     font-size: 1.5rem;
     letter-spacing: -0.025em;
     background: linear-gradient(to right, var(--primary), var(--secondary));
@@ -79,7 +80,7 @@ body {
 }
 
 .nav-link {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-main) !important;
     padding: 0.5rem 1rem !important;
     transition: all 0.2s ease;
@@ -98,7 +99,7 @@ body {
 
 .nav-btn {
     padding: 0.6rem 1.5rem !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     border-radius: 12px !important;
     margin-left: 0.5rem;
 }
@@ -129,7 +130,7 @@ body {
 
 .hero-title {
     font-size: 4.5rem;
-    font-weight: 800;
+    font-weight: 900;
     letter-spacing: -0.04em;
     line-height: 1;
     margin-bottom: 1.5rem;
@@ -149,7 +150,7 @@ body {
     border: none;
     padding: 0.8rem 2rem;
     border-radius: 14px;
-    font-weight: 600;
+    font-weight: 700;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
 }
@@ -166,7 +167,7 @@ body {
     background: transparent;
     padding: 0.8rem 2rem;
     border-radius: 14px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .btn-outline-primary:hover {
@@ -204,7 +205,7 @@ body {
     border: none;
     background: transparent;
     color: var(--text-muted);
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.875rem;
 }
 
@@ -284,4 +285,78 @@ body {
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
     border-color: var(--primary);
     background: white;
+}
+
+/* Enhanced Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.lead {
+    font-weight: 500;
+    line-height: 1.7;
+}
+
+.fw-bold {
+    font-weight: 800 !important;
+}
+
+.fw-semibold {
+    font-weight: 700 !important;
+}
+
+.form-label {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+}
+
+.card-title {
+    font-weight: 800;
+}
+
+.badge {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* Text Improvements */
+p {
+    line-height: 1.7;
+}
+
+.text-muted {
+    font-weight: 500;
+}
+
+/* Links */
+a {
+    font-weight: 600;
+}
+
+/* Footer Links */
+.footer-link {
+    font-weight: 600;
+}
+
+/* Input and textarea improvements */
+input, textarea, select {
+    font-weight: 500;
+}
+
+input::placeholder, textarea::placeholder {
+    font-weight: 400;
+    opacity: 0.6;
+}
+
+/* Enhanced buttons */
+.btn {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+/* Card headers */
+.card-header {
+    font-weight: 800;
 }
