@@ -45,6 +45,12 @@
 
                     <li class="nav-item auth-guest"><a class="nav-link btn-outline-primary nav-btn {% if request.endpoint == 'login_page' %}active{% endif %}" href="{{ url_for('login_page') }}" data-t="nav_login">Login</a></li>
                     <li class="nav-item auth-guest"><a class="nav-link btn-primary text-white nav-btn {% if request.endpoint == 'register_page' %}active{% endif %}" href="{{ url_for('register_page') }}" data-t="nav_register">Register</a></li>
+                    <li class="nav-item auth-user" style="display: none;">
+                        <span class="nav-link text-muted me-2">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <span id="user-greeting"><span data-t="user_greeting">Hello</span>, <span id="user-name-display">User</span></span>
+                        </span>
+                    </li>
                     <li class="nav-item auth-user" style="display: none;"><button class="nav-link btn-outline-danger nav-btn" onclick="logout()" data-t="nav_logout">Logout</button></li>
                 </ul>
             </div>
@@ -105,12 +111,19 @@
     <script>
         function updateAuthUI() {
             const token = localStorage.getItem('authToken');
+            const userName = localStorage.getItem('userName');
             const guests = document.querySelectorAll('.auth-guest');
             const users = document.querySelectorAll('.auth-user');
             
             if (token) {
                 guests.forEach(el => el.style.display = 'none');
                 users.forEach(el => el.style.display = 'block');
+                
+                // Update user name display
+                const userNameDisplay = document.getElementById('user-name-display');
+                if (userNameDisplay && userName) {
+                    userNameDisplay.textContent = userName;
+                }
             } else {
                 guests.forEach(el => el.style.display = 'block');
                 users.forEach(el => el.style.display = 'none');
@@ -119,6 +132,7 @@
 
         function logout() {
             localStorage.removeItem('authToken');
+            localStorage.removeItem('userName');
             window.location.href = '{{ url_for("home") }}';
         }
 

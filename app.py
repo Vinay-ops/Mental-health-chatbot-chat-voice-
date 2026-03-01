@@ -455,7 +455,7 @@ def register():
         return jsonify({"error": "Registration failed"}), 500
         
     token = _make_token(uid, email)
-    return jsonify({"token": token})
+    return jsonify({"token": token, "name": name})
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -474,7 +474,7 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
         
     token = _make_token(user["_id"], user["email"])
-    return jsonify({"token": token})
+    return jsonify({"token": token, "name": user.get("name", "User")})
 
 @app.route('/api/contact', methods=['POST'])
 def contact_api():

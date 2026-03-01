@@ -54,6 +54,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await res.json();
         if (res.ok) {
             localStorage.setItem('authToken', data.token);
+            localStorage.setItem('userName', data.name);
             alert('Welcome back');
             window.location.href = '/chat';
         } else {
