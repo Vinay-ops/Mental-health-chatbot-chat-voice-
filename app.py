@@ -379,16 +379,22 @@ def chat_api():
         pass
         
     raw_reply = None
+    # TRY CLOUD FIRST (ONLINE)
     if provider == "groq":
         raw_reply = _groq_reply(full_prompt_message, current_system_prompt)
     elif provider == "gemini":
         raw_reply = _gemini_reply(full_prompt_message, current_system_prompt)
     elif provider == "grok":
         raw_reply = _grok_reply(full_prompt_message, current_system_prompt)
-    elif provider == "ollama":
+    
+    # IF CLOUD FAILS OR OLLAMA IS SELECTED, TRY OLLAMA (OFFLINE)
+    if not raw_reply:
+        print("DEBUG: Cloud provider failed or not available. Falling back to Ollama (Offline Mode)...")
         raw_reply = _ollama_reply(full_prompt_message, current_system_prompt)
     
+    # FINAL FALLBACK (IF BOTH FAIL)
     if not raw_reply:
+        print("DEBUG: Both Cloud and Ollama failed. Using local fallback rules.")
         raw_reply = _fallback_response(message)
         
     # Parse sentiment and reply

@@ -62,17 +62,18 @@ _connection_checked = False
 
 def check_connection():
     global _connection_checked, _use_json_fallback
-    if _connection_checked:
-        return True
-    
-    conn = get_db_connection()
-    if conn:
-        conn.close()
-        _connection_checked = True
-        _use_json_fallback = False
-        return True
-    
-    return False
+    try:
+        conn = get_db_connection()
+        if conn:
+            conn.close()
+            _use_json_fallback = False
+            return True
+        else:
+            _use_json_fallback = True
+            return False
+    except Exception:
+        _use_json_fallback = True
+        return False
 
 def ensure_schema():
     conn = get_db_connection()
