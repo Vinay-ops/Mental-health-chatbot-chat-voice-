@@ -102,7 +102,7 @@ NEAREST_PSYCHOLOGISTS = {
     ]
 }
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change")
 JWT_ALGO = "HS256"
 JWT_EXP_MIN = int(os.getenv("JWT_EXP_MIN", "120"))
@@ -482,7 +482,7 @@ def new_chat():
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
-    email = data.get('email')
+    email = data.get('email', '').strip().lower()
     password = data.get('password')
     name = data.get('name')
     
@@ -505,7 +505,7 @@ def register():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
-    email = data.get('email')
+    email = data.get('email', '').strip().lower()
     password = data.get('password')
     
     if not email or not password:
