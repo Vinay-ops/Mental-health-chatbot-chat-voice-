@@ -489,8 +489,7 @@ def register():
     if not email or not password or not name:
         return jsonify({"error": "Missing fields"}), 400
         
-    if not db.check_connection():
-        return jsonify({"error": "Database error. Please try again later."}), 503
+    db.check_connection() # Update _use_json_fallback status
 
     existing = db.get_user_by_email(email)
     if existing:
@@ -512,8 +511,7 @@ def login():
     if not email or not password:
         return jsonify({"error": "Missing fields"}), 400
         
-    if not db.check_connection():
-        return jsonify({"error": "Database error. Please try again later."}), 503
+    db.check_connection() # Update _use_json_fallback status
 
     user = db.get_user_by_email(email)
     if not user or not _verify_password(password, user["password_hash"]):
