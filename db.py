@@ -58,7 +58,7 @@ def get_db_connection():
         _use_json_fallback = True
         return None
 
-_connection_checked_use_json_fallback = False
+_connection_checked = False
 _force_offline = False
 
 def set_force_offline(value: bool):
