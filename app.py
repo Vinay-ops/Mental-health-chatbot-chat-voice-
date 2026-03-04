@@ -217,12 +217,19 @@ def _grok_reply(message: str, system_prompt: str) -> str:
 def _ollama_reply(message: str, system_prompt: str) -> str:
     try:
         model = os.getenv("OLLAMA_MODEL", "llama3.2")
+        api_key = os.getenv("OLLAMA_API_KEY")
+        base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+        
+        headers = {}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+            
         payload = {
             "model": model,
             "prompt": f"{system_prompt}\nUser: {message}\nAssistant:",
             "stream": False,
         }
-        r = requests.post("http://127.0.0.1:11434/api/generate", json=payload, timeout=30)
+        r = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
         j = r.json()
         resp = j.get("response", "")
         return resp.strip() or None
