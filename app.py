@@ -50,35 +50,55 @@ SAFE_SYSTEM_PROMPT = (
 NEAREST_PSYCHOLOGISTS = {
     "mumbai": [
         {"name": "Dr. A. Sharma, Clinical Psychologist", "address": "Andheri West, Mumbai", "phone": "+91-98765-00001"},
-        {"name": "MindCare Clinic Mumbai", "address": "Bandra East, Mumbai", "phone": "+91-98765-00002"}
+        {"name": "MindCare Clinic Mumbai", "address": "Bandra East, Mumbai", "phone": "+91-98765-00002"},
+        {"name": "Dr. Sneha Patil, Psychotherapist", "address": "Colaba, Mumbai", "phone": "+91-98765-00021"}
     ],
     "pune": [
         {"name": "Dr. R. Kulkarni, Counseling Psychologist", "address": "Kothrud, Pune", "phone": "+91-98765-00003"},
-        {"name": "Hope Mental Wellness Center", "address": "Viman Nagar, Pune", "phone": "+91-98765-00004"}
+        {"name": "Hope Mental Wellness Center", "address": "Viman Nagar, Pune", "phone": "+91-98765-00004"},
+        {"name": "Dr. Anjali Deshmukh, Child Psychologist", "address": "Hinjewadi, Pune", "phone": "+91-98765-00022"}
     ],
     "delhi": [
         {"name": "Dr. S. Verma, Psychotherapist", "address": "South Extension, New Delhi", "phone": "+91-98765-00005"},
-        {"name": "Calm Mind Clinic", "address": "Dwarka, New Delhi", "phone": "+91-98765-00006"}
+        {"name": "Calm Mind Clinic", "address": "Dwarka, New Delhi", "phone": "+91-98765-00006"},
+        {"name": "Dr. Rahul Mehra, Clinical Psychologist", "address": "Connaught Place, New Delhi", "phone": "+91-98765-00023"}
     ],
     "bengaluru": [
         {"name": "Serene Minds Center", "address": "Indiranagar, Bengaluru", "phone": "+91-98765-00007"},
-        {"name": "Dr. K. Rao, Clinical Psychologist", "address": "Koramangala, Bengaluru", "phone": "+91-98765-00008"}
+        {"name": "Dr. K. Rao, Clinical Psychologist", "address": "Koramangala, Bengaluru", "phone": "+91-98765-00008"},
+        {"name": "Dr. Priya Sundaram, Counselor", "address": "HSR Layout, Bengaluru", "phone": "+91-98765-00024"}
     ],
     "bangalore": [
         {"name": "Serene Minds Center", "address": "Indiranagar, Bengaluru", "phone": "+91-98765-00007"},
-        {"name": "Dr. K. Rao, Clinical Psychologist", "address": "Koramangala, Bengaluru", "phone": "+91-98765-00008"}
+        {"name": "Dr. K. Rao, Clinical Psychologist", "address": "Koramangala, Bengaluru", "phone": "+91-98765-00008"},
+        {"name": "Dr. Priya Sundaram, Counselor", "address": "HSR Layout, Bengaluru", "phone": "+91-98765-00024"}
     ],
     "chennai": [
         {"name": "Calm Waves Wellness", "address": "T. Nagar, Chennai", "phone": "+91-98765-00009"},
-        {"name": "Dr. L. Iyer, Counseling Psychologist", "address": "Anna Nagar, Chennai", "phone": "+91-98765-00010"}
+        {"name": "Dr. L. Iyer, Counseling Psychologist", "address": "Anna Nagar, Chennai", "phone": "+91-98765-00010"},
+        {"name": "Dr. Meena Swamy, Psychotherapist", "address": "Adyar, Chennai", "phone": "+91-98765-00025"}
     ],
     "hyderabad": [
         {"name": "HopeCare Psychological Services", "address": "Banjara Hills, Hyderabad", "phone": "+91-98765-00011"},
-        {"name": "Mindful Living Clinic", "address": "Gachibowli, Hyderabad", "phone": "+91-98765-00012"}
+        {"name": "Mindful Living Clinic", "address": "Gachibowli, Hyderabad", "phone": "+91-98765-00012"},
+        {"name": "Dr. Sameer Khan, Psychiatrist", "address": "Jubilee Hills, Hyderabad", "phone": "+91-98765-00026"}
     ],
     "kolkata": [
         {"name": "Dr. P. Mukherjee, Psychologist", "address": "Salt Lake, Kolkata", "phone": "+91-98765-00013"},
-        {"name": "Harmony Mental Wellness", "address": "Park Street, Kolkata", "phone": "+91-98765-00014"}
+        {"name": "Harmony Mental Wellness", "address": "Park Street, Kolkata", "phone": "+91-98765-00014"},
+        {"name": "Dr. Amitava Ghosh, Counselor", "address": "Ballygunge, Kolkata", "phone": "+91-98765-00027"}
+    ],
+    "ahmedabad": [
+        {"name": "Dr. Jatin Shah, Psychologist", "address": "Satellite, Ahmedabad", "phone": "+91-98765-00015"},
+        {"name": "Aura Wellness Clinic", "address": "Navrangpura, Ahmedabad", "phone": "+91-98765-00016"}
+    ],
+    "jaipur": [
+        {"name": "Dr. Neha Goyal, Counselor", "address": "Malviya Nagar, Jaipur", "phone": "+91-98765-00017"},
+        {"name": "Pink City Mental Health", "address": "Vaishali Nagar, Jaipur", "phone": "+91-98765-00018"}
+    ],
+    "lucknow": [
+        {"name": "Dr. Manish Tiwari, Psychiatrist", "address": "Gomti Nagar, Lucknow", "phone": "+91-98765-00019"},
+        {"name": "MindSpace Lucknow", "address": "Hazratganj, Lucknow", "phone": "+91-98765-00020"}
     ]
 }
 
