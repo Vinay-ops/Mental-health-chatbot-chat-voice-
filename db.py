@@ -251,7 +251,7 @@ def get_user_by_email(email: str):
         if conn:
             try:
                 cursor = conn.cursor(cursor_factory=RealDictCursor)
-                cursor.execute("SELECT id as _id, email, password_hash, name FROM users WHERE email = %s", (email,))
+                cursor.execute("SELECT id as _id, email, password_hash, name FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
                 user = cursor.fetchone()
                 cursor.close()
                 conn.close()
