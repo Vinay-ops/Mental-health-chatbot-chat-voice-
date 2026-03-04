@@ -279,9 +279,22 @@ def _groq_reply(message: str, system_prompt: str) -> str:
 
 # --- Routes ---
 
+@app.before_request
+def handle_offline_mode():
+    mode = request.args.get('mode') or request.cookies.get('app_mode')
+    if mode == 'offline':
+        db.set_force_offline(True)
+    else:
+        db.set_force_offline(False)
+
 @app.route('/')
 def home():
-    return render_template('index.html')
+    mode = request.args.get('mode')
+    from flask import make_response
+    resp = make_response(render_template('index.html'))
+    if mode:
+        resp.set_cookie('app_mode', mode)
+    return resp
 
 @app.route('/about')
 def about():

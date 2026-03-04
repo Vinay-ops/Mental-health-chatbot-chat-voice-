@@ -58,10 +58,18 @@ def get_db_connection():
         _use_json_fallback = True
         return None
 
-_connection_checked = False
+_connection_checked_use_json_fallback = False
+_force_offline = False
+
+def set_force_offline(value: bool):
+    global _force_offline
+    _force_offline = value
 
 def check_connection():
-    global _connection_checked, _use_json_fallback
+    global _connection_checked, _use_json_fallback, _force_offline
+    if _force_offline:
+        _use_json_fallback = True
+        return False
     try:
         conn = get_db_connection()
         if conn:
