@@ -309,23 +309,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
-    // --- Emotional Text-to-Speech with emotional voice ---
-    async function playEmotionalAudio(messageText) {
+    // --- Emotional Text-to-Speech with high-fidelity emotional voice ---
+    async function playEmotionalAudio(messageText, source = 'chat') {
         const token = localStorage.getItem('authToken');
         if (!token) {
-            alert('Please log in to use voice features');
+            console.warn('No auth token found for high-fidelity TTS. Falling back to browser voice.');
+            speakRobotic(messageText);
             return;
         }
 
         try {
-            // Show loading state
+            // Show loading state for chat buttons
             const speakBtns = document.querySelectorAll('.speak-btn');
-            speakBtns.forEach(btn => {
-                if (btn.getAttribute('data-message') === messageText) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
-                }
-            });
+            if (source === 'chat') {
+                speakBtns.forEach(btn => {
+                    if (btn.getAttribute('data-message') === messageText) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                    }
+                });
+            } else if (source === 'voice') {
+                voiceStatusText.textContent = "Synthesizing...";
+            }
+
+            // Determine emotion based on current sentiment if available
+            const currentSentiment = sentimentBadge?.querySelector('span')?.textContent?.toLowerCase() || 'empathetic';
+            const emotionMap = {
+                'happy': 'encouraging',
+                'sad': 'empathetic',
+                'anxious': 'calm',
+                'angry': 'calm',
+                'calm': 'calm',
+                'neutral': 'supportive'
+            };
+            const targetEmotion = emotionMap[currentSentiment] || 'empathetic';
 
             // Make request to synthesize endpoint
             const res = await fetch('/api/synthesize', {
@@ -336,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     text: messageText,
-                    emotion: 'empathetic'  // Mental health chatbot should use empathetic emotion
+                    emotion: targetEmotion
                 })
             });
 
@@ -353,31 +370,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 const blob = new Blob([bytes], { type: 'audio/mpeg' });
                 const audioUrl = URL.createObjectURL(blob);
                 const audio = new Audio(audioUrl);
+                
+                audio.onplay = () => {
+                    if (source === 'voice') {
+                        voiceStatusText.textContent = "Speaking...";
+                    }
+                };
+
+                audio.onended = () => {
+                    if (source === 'voice') {
+                        voiceStatusText.textContent = t('voice_click_to_start');
+                    }
+                    URL.revokeObjectURL(audioUrl);
+                };
+
                 audio.play();
 
-                // Reset button
+                // Reset chat buttons
+                if (source === 'chat') {
+                    speakBtns.forEach(btn => {
+                        if (btn.getAttribute('data-message') === messageText) {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bi bi-speaker-fill me-1"></i>Listen';
+                        }
+                    });
+                }
+            } else {
+                throw new Error(data.error || 'Unknown TTS error');
+            }
+
+        } catch (e) {
+            console.error('High-Fidelity TTS Error:', e);
+            // Final fallback to robotic voice if backend fails
+            speakRobotic(messageText);
+            
+            // Reset UI
+            if (source === 'chat') {
+                const speakBtns = document.querySelectorAll('.speak-btn');
                 speakBtns.forEach(btn => {
                     if (btn.getAttribute('data-message') === messageText) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="bi bi-speaker-fill me-1"></i>Listen';
                     }
                 });
-            } else {
-                throw new Error(data.error || 'Unknown TTS error');
+            } else if (source === 'voice') {
+                voiceStatusText.textContent = t('voice_click_to_start');
             }
-
-        } catch (e) {
-            console.error('Emotional TTS Error:', e);
-            alert('Could not generate emotional voice. Please try again.');
-            
-            // Reset button
-            const speakBtns = document.querySelectorAll('.speak-btn');
-            speakBtns.forEach(btn => {
-                if (btn.getAttribute('data-message') === messageText) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-speaker-fill me-1"></i>Listen';
-                }
-            });
         }
     }
 
@@ -392,8 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetchAIResponse(text);
         typingIndicator.style.display = 'none';
         addChatMessage(response, false);
-        
-        // speak(response); // Voice disabled in Chat mode as requested
     }
 
     sendBtn.addEventListener('click', handleChatSend);
@@ -431,7 +467,10 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceStatusText.textContent = t('chat_listening');
             voiceTranscript.textContent = "...";
             voiceAiReplyBox.style.display = 'none';
+            // Stop any playing audio
             synth.cancel();
+            const audios = document.querySelectorAll('audio');
+            audios.forEach(a => a.pause());
         };
 
         recognition.onresult = (event) => {
@@ -476,9 +515,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Stop any current speaking before starting to listen
-        if (synth.speaking) {
-            synth.cancel();
-        }
+        synth.cancel();
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(a => a.pause());
 
         if (isRecording) {
             stopRecording();
@@ -514,10 +553,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add response to background chat history
         addChatMessage(response, false);
         
-        speak(response);
+        // Use high-fidelity voice for response
+        playEmotionalAudio(response, 'voice');
     }
 
-    function speak(text) {
+    // Renamed from speak to speakRobotic to clarify it's the fallback
+    function speakRobotic(text) {
         if (!synth || !text) return;
         
         // Stop any current speaking
