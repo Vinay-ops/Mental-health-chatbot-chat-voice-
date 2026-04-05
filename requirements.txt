@@ -7,3 +7,8 @@ passlib[bcrypt]==1.7.4
 PyJWT==2.8.0
 psycopg2-binary==2.9.9
 flask-bcrypt==1.0.1
+# Text-to-Speech with emotional voices
+google-cloud-texttospeech==2.14.1
+pyttsx3==2.90
+# Optional: For advanced audio processing
+librosa==0.10.0

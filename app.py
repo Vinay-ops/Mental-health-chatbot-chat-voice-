@@ -1,5 +1,6 @@
 import os
 import collections
+import base64
 # Fix for Python 3.10+ where MutableMapping moved to collections.abc
 if not hasattr(collections, 'MutableMapping'):
     import collections.abc
@@ -19,10 +20,18 @@ import jwt
 import db
 from dotenv import load_dotenv
 import json
+from tts_service import EmotionalTTSService, synthesize_with_emotion
 
 load_dotenv()
 
 app = Flask(__name__)
+
+# Initialize TTS Service (with proper error handling)
+try:
+    tts_service = EmotionalTTSService(method="google")
+except Exception as e:
+    print(f"Warning: Google TTS not available: {e}")
+    tts_service = EmotionalTTSService(method="pyttsx3")
 
 # --- In-Memory Session Storage (Overpowered Memory) ---
 # In a production app, use Redis or a DB, but for this "overpowered" update,
@@ -404,6 +413,67 @@ def chat_api():
         "sentiment": sentiment,
         "session_id": session_id
     })
+
+@app.route('/api/synthesize', methods=['POST'])
+@token_required
+def synthesize_audio(user_id, email):
+    """
+    Convert chatbot response to emotional speech audio.
+    
+    Request JSON:
+    {
+        "text": "The response text to convert to speech",
+        "emotion": "empathetic|calm|encouraging|supportive|neutral"  # Optional, default: "empathetic"
+    }
+    
+    Response: Audio file (MP3) or JSON with base64 encoded audio
+    """
+    try:
+        data = request.get_json()
+        text = data.get("text", "").strip()
+        emotion = data.get("emotion", "empathetic").lower()
+        
+        # Validate inputs
+        if not text or len(text) == 0:
+            return jsonify({"error": "Text is required"}), 400
+        
+        if emotion not in ["empathetic", "calm", "encouraging", "supportive", "neutral"]:
+            emotion = "empathetic"
+        
+        # Synthesize speech
+        success, message, audio_bytes = tts_service.synthesize(
+            text=text,
+            emotion=emotion,
+            output_path=None  # Return bytes, don't save file
+        )
+        
+        if not success:
+            return jsonify({"error": f"TTS failed: {message}"}), 500
+        
+        if audio_bytes:
+            # Return audio as base64 for easy client-side playback
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+            
+            # Log the synthesis
+            try:
+                if db.check_connection():
+                    db.save_log("tts_synthesis", f"emotion:{emotion}, text_length:{len(text)}", user_id=user_id)
+            except Exception:
+                pass
+            
+            return jsonify({
+                "success": True,
+                "audio": audio_b64,
+                "audio_format": "audio/mpeg",  # MP3 format
+                "emotion": emotion,
+                "text_length": len(text)
+            }), 200
+        else:
+            return jsonify({"error": "Audio synthesis returned empty"}), 500
+            
+    except Exception as e:
+        print(f"Synthesis error: {e}")
+        return jsonify({"error": f"Synthesis error: {str(e)}"}), 500
 
 @app.route('/api/history/<session_id>', methods=['GET'])
 @token_required

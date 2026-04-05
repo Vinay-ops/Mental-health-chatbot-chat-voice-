@@ -276,12 +276,109 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.innerHTML = `
                 <div class="d-flex align-items-start gap-3">
                     <div class="ai-icon-container"><i class="bi bi-robot"></i></div>
+                    <div>
                         <div class="message-content">${text}</div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-primary speak-btn" data-message="${escapeHtml(text)}" title="Listen with emotional voice">
+                                <i class="bi bi-speaker-fill me-1"></i>Listen
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
         }
         chatMessages.appendChild(messageDiv);
+        
+        // Add event listener to speak button
+        if (!isUser) {
+            const speakBtn = messageDiv.querySelector('.speak-btn');
+            if (speakBtn) {
+                speakBtn.addEventListener('click', () => {
+                    const msgText = speakBtn.getAttribute('data-message');
+                    playEmotionalAudio(msgText);
+                });
+            }
+        }
+        
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // --- Emotional Text-to-Speech with emotional voice ---
+    async function playEmotionalAudio(messageText) {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            alert('Please log in to use voice features');
+            return;
+        }
+
+        try {
+            // Show loading state
+            const speakBtns = document.querySelectorAll('.speak-btn');
+            speakBtns.forEach(btn => {
+                if (btn.getAttribute('data-message') === messageText) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                }
+            });
+
+            // Make request to synthesize endpoint
+            const res = await fetch('/api/synthesize', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: messageText,
+                    emotion: 'empathetic'  // Mental health chatbot should use empathetic emotion
+                })
+            });
+
+            if (!res.ok) throw new Error('TTS synthesis failed');
+            const data = await res.json();
+
+            if (data.success && data.audio) {
+                // Decode base64 audio and play
+                const binaryString = atob(data.audio);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(blob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+
+                // Reset button
+                speakBtns.forEach(btn => {
+                    if (btn.getAttribute('data-message') === messageText) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-speaker-fill me-1"></i>Listen';
+                    }
+                });
+            } else {
+                throw new Error(data.error || 'Unknown TTS error');
+            }
+
+        } catch (e) {
+            console.error('Emotional TTS Error:', e);
+            alert('Could not generate emotional voice. Please try again.');
+            
+            // Reset button
+            const speakBtns = document.querySelectorAll('.speak-btn');
+            speakBtns.forEach(btn => {
+                if (btn.getAttribute('data-message') === messageText) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-speaker-fill me-1"></i>Listen';
+                }
+            });
+        }
     }
 
     async function handleChatSend() {
