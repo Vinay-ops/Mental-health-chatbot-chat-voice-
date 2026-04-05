@@ -30,7 +30,7 @@ MindCare Navigator isn't just another chatbot. It's a **compassionate, voice-ena
 | **Database** | Supabase / PostgreSQL (Real-time & Secure) |
 | **AI Engine** | RAG-Grounded LLMs (Groq, Gemini, Grok) |
 | **Auth** | Secure JWT & Bcrypt Hashing |
-| **Voice** | Web Speech API (Seamless VTT/TTS) |
+| **Voice** | **Fish Audio** (High-Fidelity) / Google Neural2 / pyttsx3 |
 
 ---
 

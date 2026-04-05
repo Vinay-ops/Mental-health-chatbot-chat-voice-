@@ -91,12 +91,68 @@ class EmotionalTTSService:
         # Clean text
         text = text.strip()[:5000]  # Limit to 5000 chars
         
-        if self.method == "google" and self.google_client:
+        # Priority: Fish Audio (if key exists) > Google > Pyttsx3
+        fish_key = os.getenv("FISH_AUDIO_API_KEY")
+        
+        if self.method == "fish" or (self.method == "google" and fish_key):
+            # Auto-switch to Fish if key exists and it's better quality
+            return self._synthesize_fish_audio(text, emotion, output_path)
+        elif self.method == "google" and self.google_client:
             return self._synthesize_google(text, emotion, output_path)
         elif self.method == "pyttsx3" and self.pyttsx3_engine:
             return self._synthesize_pyttsx3(text, emotion, output_path)
         else:
             return self._synthesize_rest_api(text, emotion, output_path)
+
+    def _synthesize_fish_audio(
+        self, 
+        text: str, 
+        emotion: str,
+        output_path: Optional[str]
+    ) -> Tuple[bool, str, Optional[bytes]]:
+        """Use Fish Audio for high-fidelity emotional speech."""
+        try:
+            api_key = os.getenv("FISH_AUDIO_API_KEY")
+            if not api_key:
+                return False, "Fish Audio API key missing in environment variables", None
+            
+            # Map emotions to Fish Audio tags
+            emotion_tags = {
+                "empathetic": "[warm, empathetic, caring]",
+                "calm": "[soothing, calm, peaceful]",
+                "encouraging": "[bright, encouraging, positive]",
+                "supportive": "[supportive, attentive]",
+                "neutral": "[professional, clear]"
+            }
+            
+            tag = emotion_tags.get(emotion, "[neutral]")
+            formatted_text = f"{tag} {text}"
+            
+            url = "https://api.fish.audio/v1/tts"
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "model": "s1"
+            }
+            
+            data = {"text": formatted_text}
+            
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            
+            if response.status_code == 200:
+                audio_bytes = response.content
+                
+                if output_path:
+                    with open(output_path, 'wb') as f:
+                        f.write(audio_bytes)
+                
+                return True, "Fish Audio synthesis successful", audio_bytes
+            else:
+                return False, f"Fish Audio API error: {response.status_code} - {response.text}", None
+                
+        except Exception as e:
+            print(f"Fish Audio error: {e}")
+            return False, f"Fish Audio failed: {str(e)}", None
     
     def _synthesize_google(
         self, 
@@ -285,6 +341,7 @@ class EmotionalTTSService:
     def get_available_methods(self) -> dict:
         """Return available TTS methods."""
         return {
+            "fish": bool(os.getenv("FISH_AUDIO_API_KEY")),
             "google": GOOGLE_TTS_AVAILABLE,
             "pyttsx3": PYTTSX3_AVAILABLE,
             "huggingface": bool(os.getenv("HF_API_TOKEN"))
@@ -307,8 +364,10 @@ def synthesize_with_emotion(
     - "neutral": Standard, professional
     """
     
-    # Try to use Google by default
-    if GOOGLE_TTS_AVAILABLE:
+    # Try to use Fish Audio by default if key exists
+    if os.getenv("FISH_AUDIO_API_KEY"):
+        tts = EmotionalTTSService(method="fish")
+    elif GOOGLE_TTS_AVAILABLE:
         tts = EmotionalTTSService(method="google")
     elif PYTTSX3_AVAILABLE:
         tts = EmotionalTTSService(method="pyttsx3")

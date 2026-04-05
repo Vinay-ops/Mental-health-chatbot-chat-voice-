@@ -2,9 +2,38 @@
 
 ## Overview
 
-Your Mental Health Chatbot now has **emotional speech synthesis** using Google Cloud Text-to-Speech. This provides warm, empathetic voices that are perfect for mental health support conversations.
+Your Mental Health Chatbot supports high-quality, **emotional speech synthesis** using top-tier providers. It prioritizes the most realistic models to ensure an empathetic user experience.
 
-## Available Emotions
+## Recommended Models
+
+| Model | Status | Best For | Emotion Quality |
+|-------|--------|----------|-----------------|
+| **Fish Audio** | **NEW** | Most realistic, human-like | ⭐⭐⭐⭐⭐ |
+| **Google Cloud TTS** | Supported | Professional, stable | ⭐⭐⭐⭐ |
+| **pyttsx3** | Fallback | Offline, no API key needed | ⭐⭐ |
+
+---
+
+## Setup Instructions
+
+### 1. **Fish Audio (Top Recommendation - Most Human)**
+
+Fish Audio provides the most realistic "human" voice with natural breaths and deep emotional control.
+
+#### Steps:
+1. **Get an API Key:**
+   - Go to [fish.audio](https://fish.audio/)
+   - Sign up and go to your dashboard to copy your API key.
+2. **Configure Your App:**
+   - Open your `.env` file and add:
+     ```bash
+     FISH_AUDIO_API_KEY=your_api_key_here
+     ```
+3. **Usage:**
+   - The system will automatically prioritize Fish Audio if the key is detected.
+   - You can use tags like `[warm]`, `[calm]`, or `[whispering]` in the text to influence the tone.
+
+### 2. **Google Cloud Text-to-Speech**
 
 The TTS system supports 5 emotional voice profiles:
 
