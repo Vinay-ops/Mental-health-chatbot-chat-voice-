@@ -114,7 +114,8 @@ class EmotionalTTSService:
         try:
             api_key = os.getenv("FISH_AUDIO_API_KEY")
             if not api_key:
-                return False, "Fish Audio API key missing in environment variables", None
+                print("DEBUG: Fish Audio API key missing in environment")
+                return False, "Fish Audio API key missing", None
             
             # Map emotions to Fish Audio tags
             emotion_tags = {
@@ -131,15 +132,22 @@ class EmotionalTTSService:
             url = "https://api.fish.audio/v1/tts"
             headers = {
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "model": "s1"
+                "Content-Type": "application/json"
             }
             
-            data = {"text": formatted_text}
+            # Use their standard model settings
+            data = {
+                "text": formatted_text,
+                "model": "s1",
+                "format": "mp3",
+                "latency": "normal"
+            }
             
+            print(f"DEBUG: Calling Fish Audio API with text: {formatted_text[:50]}...")
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
+                print("DEBUG: Fish Audio synthesis successful")
                 audio_bytes = response.content
                 
                 if output_path:
@@ -148,10 +156,12 @@ class EmotionalTTSService:
                 
                 return True, "Fish Audio synthesis successful", audio_bytes
             else:
-                return False, f"Fish Audio API error: {response.status_code} - {response.text}", None
+                print(f"DEBUG: Fish Audio API error: {response.status_code} - {response.text}")
+                # Fallback to Hugging Face if Fish Audio fails (e.g. limit reached)
+                return self._synthesize_huggingface(text, emotion, output_path, os.getenv("HF_API_TOKEN"))
                 
         except Exception as e:
-            print(f"Fish Audio error: {e}")
+            print(f"Fish Audio Exception: {e}")
             return False, f"Fish Audio failed: {str(e)}", None
     
     def _synthesize_google(
@@ -264,31 +274,40 @@ class EmotionalTTSService:
         text: str,
         emotion: str,
         output_path: Optional[str],
-        hf_token: str
+        hf_token: Optional[str] = None
     ) -> Tuple[bool, str, Optional[bytes]]:
-        """Use Hugging Face Text-to-Speech models."""
+        """Use Hugging Face Text-to-Speech models as a fallback."""
         try:
-            # Using a quality TTS model from Hugging Face
-            model = "microsoft/speecht5_tts"  # High quality, free
+            # Using a quality, fast, and free model from Hugging Face
+            # Kokoro is currently one of the best free options
+            model = "hexgrad/Kokoro-82M" 
             url = f"https://api-inference.huggingface.co/models/{model}"
             
-            headers = {"Authorization": f"Bearer {hf_token}"}
+            hf_token = hf_token or os.getenv("HF_API_TOKEN")
+            headers = {}
+            if hf_token:
+                headers["Authorization"] = f"Bearer {hf_token}"
+            
             data = {"inputs": text}
             
+            print(f"DEBUG: Calling Hugging Face (Kokoro) fallback...")
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
+                print("DEBUG: Hugging Face (Kokoro) synthesis successful")
                 audio_bytes = response.content
                 
                 if output_path:
                     with open(output_path, 'wb') as f:
                         f.write(audio_bytes)
                 
-                return True, "Hugging Face TTS synthesis successful", audio_bytes
+                return True, "Hugging Face synthesis successful", audio_bytes
             else:
+                print(f"DEBUG: Hugging Face API error: {response.status_code}")
                 return False, f"Hugging Face API error: {response.status_code}", None
                 
         except Exception as e:
+            print(f"Hugging Face Exception: {e}")
             return False, f"Hugging Face synthesis failed: {str(e)}", None
     
     def _get_emotional_voice_config(self, emotion: str) -> dict:
