@@ -59,20 +59,29 @@ def get_db_connection():
         return None
 
 _connection_checked = False
+_force_offline = False
+
+def set_force_offline(value: bool):
+    global _force_offline
+    _force_offline = value
 
 def check_connection():
-    global _connection_checked, _use_json_fallback
-    if _connection_checked:
-        return True
-    
-    conn = get_db_connection()
-    if conn:
-        conn.close()
-        _connection_checked = True
-        _use_json_fallback = False
-        return True
-    
-    return False
+    global _connection_checked, _use_json_fallback, _force_offline
+    if _force_offline:
+        _use_json_fallback = True
+        return False
+    try:
+        conn = get_db_connection()
+        if conn:
+            conn.close()
+            _use_json_fallback = False
+            return True
+        else:
+            _use_json_fallback = True
+            return False
+    except Exception:
+        _use_json_fallback = True
+        return False
 
 def ensure_schema():
     conn = get_db_connection()
@@ -126,161 +135,182 @@ def ensure_schema():
         print(f"DEBUG: Schema error: {e}")
 
 def save_log(role: str, content: str, user_id: str = None, session_id: str = None):
-    if _use_json_fallback:
-        try:
-            data = _load_json_db()
-            data["chat_logs"].append({
-                "role": role,
-                "content": content,
-                "user_id": str(user_id) if user_id else None,
-                "session_id": session_id,
-                "ts": datetime.utcnow().isoformat()
-            })
-            _save_json_db(data)
-            return
-        except Exception as e:
-            print(f"DEBUG: Error saving to JSON: {e}")
-            return
-
-    conn = get_db_connection()
-    if not conn: 
-        # If MySQL failed, try saving to JSON as fallback
-        _use_json_fallback = True
-        save_log(role, content, user_id, session_id)
-        return
-
+    # 1. Always save to local JSON (Local Redundancy)
     try:
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO chat_logs (role, content, user_id, session_id, ts) VALUES (%s, %s, %s, %s, %s)",
-            (role, content, str(user_id) if user_id else None, session_id, datetime.utcnow())
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
+        data = _load_json_db()
+        data["chat_logs"].append({
+            "role": role,
+            "content": content,
+            "user_id": str(user_id) if user_id else None,
+            "session_id": session_id,
+            "ts": datetime.utcnow().isoformat()
+        })
+        _save_json_db(data)
     except Exception as e:
-        print(f"DEBUG: Error saving log to MySQL: {e}")
-        # Try JSON as last resort
-        _use_json_fallback = True
-        save_log(role, content, user_id, session_id)
+        print(f"DEBUG: Error saving to JSON: {e}")
+
+    # 2. Save to Supabase (if online)
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO chat_logs (role, content, user_id, session_id, ts) VALUES (%s, %s, %s, %s, %s)",
+                    (role, content, str(user_id) if user_id else None, session_id, datetime.utcnow())
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+            except Exception as e:
+                print(f"DEBUG: Error saving log to DB: {e}")
 
 def get_chat_history(user_id: str, session_id: str):
-    if _use_json_fallback:
-        data = _load_json_db()
-        return [log for log in data["chat_logs"] 
-                if log.get("user_id") == (str(user_id) if user_id else None) and log.get("session_id") == session_id]
-
-    conn = get_db_connection()
-    if not conn: return []
+    history = []
+    # 1. Try JSON (always check local for offline/flaky data)
     try:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        if user_id:
-            cursor.execute(
-                "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id = %s AND session_id = %s ORDER BY ts ASC",
-                (str(user_id), session_id)
-            )
-        else:
-            cursor.execute(
-                "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id IS NULL AND session_id = %s ORDER BY ts ASC",
-                (session_id,)
-            )
-        history = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return history
-    except Exception as e:
-        print(f"DEBUG: Error getting history: {e}")
-        return []
+        data = _load_json_db()
+        local_history = [log for log in data["chat_logs"] 
+                        if log.get("user_id") == (str(user_id) if user_id else None) and log.get("session_id") == session_id]
+        history.extend(local_history)
+    except Exception:
+        pass
+
+    # 2. Try Supabase (if online)
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                if user_id:
+                    cursor.execute(
+                        "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id = %s AND session_id = %s ORDER BY ts ASC",
+                        (str(user_id), session_id)
+                    )
+                else:
+                    cursor.execute(
+                        "SELECT role, content, user_id, session_id, ts FROM chat_logs WHERE user_id IS NULL AND session_id = %s ORDER BY ts ASC",
+                        (session_id,)
+                    )
+                db_history = cursor.fetchall()
+                # Deduplicate or just append (ts sort will handle order)
+                history.extend(db_history)
+                cursor.close()
+                conn.close()
+            except Exception as e:
+                print(f"DEBUG: Error getting DB history: {e}")
+
+    # Sort by timestamp to merge local and remote correctly
+    try:
+        history.sort(key=lambda x: x.get('ts') if x.get('ts') else "")
+    except Exception:
+        pass
+        
+    return history
 
 def get_user_sessions(user_id: str):
-    if _use_json_fallback:
+    sessions = set()
+    # 1. Check local
+    try:
         data = _load_json_db()
-        sessions = set()
         for log in data["chat_logs"]:
             if log.get("user_id") == (str(user_id) if user_id else None) and log.get("session_id"):
                 sessions.add(log["session_id"])
-        return sorted(list(sessions), reverse=True)
+    except Exception:
+        pass
 
-    conn = get_db_connection()
-    if not conn: return []
-    try:
-        cursor = conn.cursor()
-        if user_id:
-            cursor.execute(
-                "SELECT session_id FROM chat_logs WHERE user_id = %s AND session_id IS NOT NULL GROUP BY session_id ORDER BY MAX(ts) DESC",
-                (str(user_id),)
-            )
-        else:
-            cursor.execute(
-                "SELECT session_id FROM chat_logs WHERE user_id IS NULL AND session_id IS NOT NULL GROUP BY session_id ORDER BY MAX(ts) DESC",
-                (session_id,)
-            )
-        sessions = [row[0] for row in cursor.fetchall()]
-        cursor.close()
-        conn.close()
-        return sessions
-    except Exception as e:
-        print(f"DEBUG: Error getting sessions: {e}")
-        return []
+    # 2. Check Supabase
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                if user_id:
+                    cursor.execute(
+                        "SELECT session_id FROM chat_logs WHERE user_id = %s AND session_id IS NOT NULL GROUP BY session_id",
+                        (str(user_id),)
+                    )
+                else:
+                    cursor.execute(
+                        "SELECT session_id FROM chat_logs WHERE user_id IS NULL AND session_id IS NOT NULL GROUP BY session_id",
+                        ()
+                    )
+                db_sessions = [row[0] for row in cursor.fetchall()]
+                for s in db_sessions: sessions.add(s)
+                cursor.close()
+                conn.close()
+            except Exception as e:
+                print(f"DEBUG: Error getting DB sessions: {e}")
+
+    return sorted(list(sessions), reverse=True)
 
 def get_user_by_email(email: str):
-    if _use_json_fallback:
+    # 1. Try Supabase first (Primary source)
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute("SELECT id as _id, email, password_hash, name FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
+                user = cursor.fetchone()
+                cursor.close()
+                conn.close()
+                if user: return user
+            except Exception as e:
+                print(f"DEBUG: Error getting DB user: {e}")
+
+    # 2. Fallback to local JSON if not found or offline
+    try:
         data = _load_json_db()
         for user in data["users"]:
             if user["email"] == email:
                 user["_id"] = user.get("email") # Mock ID for JWT
                 return user
-        return None
-
-    conn = get_db_connection()
-    if not conn: return None
-    try:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        cursor.execute("SELECT id as _id, email, password_hash, name FROM users WHERE email = %s", (email,))
-        user = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        return user
-    except Exception as e:
-        print(f"DEBUG: Error getting user: {e}")
-        return None
+    except Exception:
+        pass
+        
+    return None
 def create_user(email: str, password_hash: str, name: str):
-    if _use_json_fallback:
-        data = _load_json_db()
-        if any(u["email"] == email for u in data["users"]):
-            return None
-        new_user = {
-            "email": email,
-            "password_hash": password_hash,
-            "name": name,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        data["users"].append(new_user)
-        _save_json_db(data)
-        return email
+    # 1. Try Supabase first (Primary source)
+    db_uid = None
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO users (email, password_hash, name, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (email, password_hash, name, datetime.utcnow())
+                )
+                row = cursor.fetchone()
+                conn.commit()
+                cursor.close()
+                conn.close()
+                if row: db_uid = str(row[0])
+            except Exception as e:
+                print(f"DEBUG: Error creating DB user: {e}")
 
-    conn = get_db_connection()
-    if not conn:
-        return None
+    # 2. Always save to local JSON (Sync/Redundancy)
     try:
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO users (email, password_hash, name, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
-            (email, password_hash, name, datetime.utcnow())
-        )
-        row = cursor.fetchone()
-        conn.commit()
-        cursor.close()
-        conn.close()
-        if not row:
-            return None
-        return str(row[0])
-    except Exception as e:
-        print(f"DEBUG: Error creating user: {e}")
-        return None
+        data = _load_json_db()
+        if not any(u["email"] == email for u in data["users"]):
+            new_user = {
+                "email": email,
+                "password_hash": password_hash,
+                "name": name,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            data["users"].append(new_user)
+            _save_json_db(data)
+    except Exception:
+        pass
+
+    # Return DB ID if we got one, otherwise return email as mock ID
+    return db_uid or email
 
 def add_community_post(user_id: str, name: str, content: str):
-    if _use_json_fallback:
+    # 1. Save to local JSON
+    try:
         data = _load_json_db()
         posts = data.get("community_posts") or []
         posts.append({
@@ -292,48 +322,63 @@ def add_community_post(user_id: str, name: str, content: str):
         })
         data["community_posts"] = posts
         _save_json_db(data)
-        return True
+    except Exception:
+        pass
 
-    conn = get_db_connection()
-    if not conn:
-        return False
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO community_posts (user_id, name, content, created_at, likes) VALUES (%s, %s, %s, %s, %s)",
-            (str(user_id) if user_id else None, name, content, datetime.utcnow(), 0)
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"DEBUG: Error adding community post: {e}")
-        return False
+    # 2. Save to Supabase (if online)
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO community_posts (user_id, name, content, created_at, likes) VALUES (%s, %s, %s, %s, %s)",
+                    (str(user_id) if user_id else None, name, content, datetime.utcnow(), 0)
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+                return True
+            except Exception as e:
+                print(f"DEBUG: Error adding DB post: {e}")
+    
+    return True # Return true because it's saved locally at least
 
 def get_community_posts(limit: int = 30):
-    if _use_json_fallback:
-        data = _load_json_db()
-        posts = data.get("community_posts") or []
-        posts_sorted = sorted(posts, key=lambda p: p.get("created_at", ""), reverse=True)
-        return posts_sorted[:limit]
-
-    conn = get_db_connection()
-    if not conn:
-        return []
+    posts = []
+    # 1. Get from local JSON
     try:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        cursor.execute(
-            "SELECT id, user_id, name, content, created_at, likes FROM community_posts ORDER BY created_at DESC LIMIT %s",
-            (limit,)
-        )
-        posts = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return posts
-    except Exception as e:
-        print(f"DEBUG: Error getting community posts: {e}")
-        return []
+        data = _load_json_db()
+        local_posts = data.get("community_posts") or []
+        posts.extend(local_posts)
+    except Exception:
+        pass
+
+    # 2. Get from Supabase
+    if not _use_json_fallback:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute(
+                    "SELECT id, user_id, name, content, created_at, likes FROM community_posts ORDER BY created_at DESC LIMIT %s",
+                    (limit,)
+                )
+                db_posts = cursor.fetchall()
+                # Append and let sort handle order
+                posts.extend(db_posts)
+                cursor.close()
+                conn.close()
+            except Exception as e:
+                print(f"DEBUG: Error getting DB community posts: {e}")
+
+    # Sort by date
+    try:
+        posts.sort(key=lambda p: p.get("created_at") if p.get("created_at") else "", reverse=True)
+    except Exception:
+        pass
+        
+    return posts[:limit]
 
 def like_community_post(post_id: int):
     if _use_json_fallback:
