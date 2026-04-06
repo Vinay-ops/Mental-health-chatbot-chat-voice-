@@ -11,11 +11,7 @@ from typing import Optional, Tuple
 import json
 
 # Try importing Google TTS library
-try:
-    from google.cloud import texttospeech
-    GOOGLE_TTS_AVAILABLE = True
-except ImportError:
-    GOOGLE_TTS_AVAILABLE = False
+GOOGLE_TTS_AVAILABLE = False # Disabled for performance in Vercel
 
 # Fallback to pyttsx3 for offline
 try:
