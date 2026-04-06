@@ -60,7 +60,8 @@ class EmotionalTTSService:
             url = "https://api.fish.audio/v1/tts"
             headers = {
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "model": "s1"  # Model specified in headers as per user's curl example
             }
             
             # Use a high-quality warm voice ID (Nicole - Warm Female)
@@ -69,16 +70,16 @@ class EmotionalTTSService:
             data = {
                 "text": formatted_text,
                 "reference_id": voice_id,
-                "model": "s1",
                 "format": "mp3",
                 "latency": "normal"
             }
             
-            print(f"DEBUG: Calling Fish Audio API (v1/tts) with model: {data['model']}, voice: {voice_id}")
+            print(f"DEBUG: Calling Fish Audio API (v1/tts) with text: {formatted_text[:30]}...")
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
                 audio_bytes = response.content
+                print(f"DEBUG: Fish Audio synthesis successful. Received {len(audio_bytes)} bytes.")
                 if output_path:
                     with open(output_path, 'wb') as f:
                         f.write(audio_bytes)

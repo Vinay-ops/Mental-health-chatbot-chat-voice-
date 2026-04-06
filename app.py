@@ -468,6 +468,7 @@ def synthesize_audio(user_id, email):
             emotion = "empathetic"
         
         # Synthesize speech
+        print(f"DEBUG: Starting synthesis for text: {text[:30]}... with emotion: {emotion}")
         success, message, audio_bytes = tts_service.synthesize(
             text=text,
             emotion=emotion,
@@ -475,14 +476,15 @@ def synthesize_audio(user_id, email):
         )
         
         if not success:
-            print(f"ERROR: All TTS synthesis methods failed: {message}")
+            print(f"ERROR: TTS synthesis failed: {message}")
             return jsonify({
                 "error": f"Voice synthesis failed. {message}", 
                 "success": False,
-                "hint": "Check if API keys (FISH_AUDIO_API_KEY or HF_API_TOKEN) are set in environment variables."
+                "hint": "Check if API keys (FISH_AUDIO_API_KEY) are set correctly."
             }), 500
         
         if audio_bytes:
+            print(f"DEBUG: Synthesis successful, returning {len(audio_bytes)} bytes of audio.")
             # Return audio as base64 for easy client-side playback
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
             

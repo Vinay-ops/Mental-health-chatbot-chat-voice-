@@ -357,10 +357,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
 
-            if (!res.ok) throw new Error('TTS synthesis failed');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'TTS synthesis failed');
+            }
+            
             const data = await res.json();
 
             if (data.success && data.audio) {
+                console.log("DEBUG: High-fidelity audio received, playing...");
                 // Decode base64 audio and play
                 const binaryString = atob(data.audio);
                 const bytes = new Uint8Array(binaryString.length);
