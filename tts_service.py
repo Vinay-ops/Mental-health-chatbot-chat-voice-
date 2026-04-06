@@ -132,18 +132,18 @@ class EmotionalTTSService:
             url = "https://api.fish.audio/v1/tts"
             headers = {
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "model": "s1"
             }
             
-            # Use their standard model settings
+            # Text is the only required field in the body for the /v1/tts endpoint
             data = {
                 "text": formatted_text,
-                "model": "s1",
                 "format": "mp3",
                 "latency": "normal"
             }
             
-            print(f"DEBUG: Calling Fish Audio API with text: {formatted_text[:50]}...")
+            print(f"DEBUG: Calling Fish Audio API (v1/tts) with text: {formatted_text[:50]}...")
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:

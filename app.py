@@ -518,8 +518,10 @@ def synthesize_audio(user_id, email):
             return jsonify({"error": "Audio synthesis returned empty"}), 500
             
     except Exception as e:
-        print(f"Synthesis error: {e}")
-        return jsonify({"error": f"Synthesis error: {str(e)}"}), 500
+        print(f"CRITICAL TTS ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Internal TTS failure: {str(e)}", "success": False}), 500
 
 @app.route('/api/history/<session_id>', methods=['GET'])
 @token_required
