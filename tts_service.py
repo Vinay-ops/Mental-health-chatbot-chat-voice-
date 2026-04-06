@@ -41,9 +41,11 @@ class EmotionalTTSService:
     ) -> Tuple[bool, str, Optional[bytes]]:
         """Use Fish Audio for high-fidelity emotional speech."""
         try:
-            api_key = os.getenv("FISH_AUDIO_API_KEY")
+            # Try environment variable first, then use the provided fallback key
+            api_key = os.getenv("FISH_AUDIO_API_KEY") or "70869140e4924ee8a6c5764dcea17557"
+            
             if not api_key:
-                return False, "Fish Audio API key missing. Please add FISH_AUDIO_API_KEY to environment variables.", None
+                return False, "Fish Audio API key missing", None
             
             # Map emotions to Fish Audio tags
             emotion_tags = {
@@ -64,15 +66,11 @@ class EmotionalTTSService:
                 "model": "s1"
             }
             
-            # Use minimal body to match working curl example exactly
             data = {
                 "text": formatted_text
             }
             
-            # Log masked key for verification
-            masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "****"
-            print(f"DEBUG: Calling Fish Audio API (v1/tts) with text: {formatted_text[:30]}... using key: {masked_key}")
-            
+            print(f"DEBUG: Calling Fish Audio API (v1/tts) with key ending in ...{api_key[-4:]}")
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
