@@ -28,10 +28,14 @@ app = Flask(__name__)
 
 # Initialize TTS Service (with proper error handling)
 try:
-    tts_service = EmotionalTTSService(method="google")
+    from tts_service import EmotionalTTSService
+    tts_service = EmotionalTTSService(method="fish")
 except Exception as e:
-    print(f"Warning: Google TTS not available: {e}")
-    tts_service = EmotionalTTSService(method="pyttsx3")
+    print(f"Warning: TTS Service initialization failed: {e}")
+    # Create a dummy object if initialization fails to prevent crash on import
+    class DummyTTS:
+        def synthesize(self, *args, **kwargs): return False, str(e), None
+    tts_service = DummyTTS()
 
 # --- In-Memory Session Storage (Overpowered Memory) ---
 # In a production app, use Redis or a DB, but for this "overpowered" update,
