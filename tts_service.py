@@ -71,34 +71,36 @@ class EmotionalTTSService:
         output_path: Optional[str] = None
     ) -> Tuple[bool, str, Optional[bytes]]:
         """
-        Synthesize emotional speech from text.
-        
-        Args:
-            text: Text to convert to speech
-            emotion: "neutral", "empathetic", "encouraging", "calm", "supportive"
-            output_path: Optional file path to save audio
-            
-        Returns:
-            (success, message, audio_bytes)
+        Synthesize emotional speech from text with multiple fallbacks.
+        Priority: Fish Audio > Hugging Face (Kokoro) > pyttsx3
         """
         if not text or len(text.strip()) == 0:
             return False, "Empty text provided", None
         
         # Clean text
-        text = text.strip()[:5000]  # Limit to 5000 chars
+        text = text.strip()[:5000]
         
-        # Priority: Fish Audio (if key exists) > Google > Pyttsx3
-        fish_key = os.getenv("FISH_AUDIO_API_KEY")
-        
-        if self.method == "fish" or (self.method == "google" and fish_key):
-            # Auto-switch to Fish if key exists and it's better quality
-            return self._synthesize_fish_audio(text, emotion, output_path)
-        elif self.method == "google" and self.google_client:
-            return self._synthesize_google(text, emotion, output_path)
-        elif self.method == "pyttsx3" and self.pyttsx3_engine:
+        # 1. Try Fish Audio (if key exists)
+        if os.getenv("FISH_AUDIO_API_KEY"):
+            success, msg, audio = self._synthesize_fish_audio(text, emotion, output_path)
+            if success: return True, msg, audio
+            print(f"DEBUG: Fish Audio failed ({msg}). Trying next fallback...")
+
+        # 2. Try Hugging Face (Kokoro is high quality & free)
+        success, msg, audio = self._synthesize_huggingface(text, emotion, output_path)
+        if success: return True, msg, audio
+        print(f"DEBUG: Hugging Face failed ({msg}). Trying next fallback...")
+
+        # 3. Try Google TTS (if enabled/available)
+        if self.google_client:
+            success, msg, audio = self._synthesize_google(text, emotion, output_path)
+            if success: return True, msg, audio
+
+        # 4. Try local pyttsx3 (Last resort, likely fails on Vercel)
+        if self.pyttsx3_engine:
             return self._synthesize_pyttsx3(text, emotion, output_path)
-        else:
-            return self._synthesize_rest_api(text, emotion, output_path)
+            
+        return False, "All TTS synthesis methods failed. Check API keys and server logs.", None
 
     def _synthesize_fish_audio(
         self, 
@@ -110,7 +112,6 @@ class EmotionalTTSService:
         try:
             api_key = os.getenv("FISH_AUDIO_API_KEY")
             if not api_key:
-                print("DEBUG: Fish Audio API key missing in environment")
                 return False, "Fish Audio API key missing", None
             
             # Map emotions to Fish Audio tags
@@ -132,33 +133,22 @@ class EmotionalTTSService:
                 "model": "s1"
             }
             
-            # Text is the only required field in the body for the /v1/tts endpoint
             data = {
                 "text": formatted_text,
                 "format": "mp3",
                 "latency": "normal"
             }
             
-            print(f"DEBUG: Calling Fish Audio API (v1/tts) with text: {formatted_text[:50]}...")
-            response = requests.post(url, headers=headers, json=data, timeout=30)
+            print(f"DEBUG: Calling Fish Audio API (v1/tts)...")
+            response = requests.post(url, headers=headers, json=data, timeout=15) # Reduced timeout for faster fallback
             
             if response.status_code == 200:
-                print("DEBUG: Fish Audio synthesis successful")
-                audio_bytes = response.content
-                
-                if output_path:
-                    with open(output_path, 'wb') as f:
-                        f.write(audio_bytes)
-                
-                return True, "Fish Audio synthesis successful", audio_bytes
+                return True, "Fish Audio synthesis successful", response.content
             else:
-                print(f"DEBUG: Fish Audio API error: {response.status_code} - {response.text}")
-                # Fallback to Hugging Face if Fish Audio fails (e.g. limit reached)
-                return self._synthesize_huggingface(text, emotion, output_path, os.getenv("HF_API_TOKEN"))
+                return False, f"Fish Audio API error: {response.status_code}", None
                 
         except Exception as e:
-            print(f"Fish Audio Exception: {e}")
-            return False, f"Fish Audio failed: {str(e)}", None
+            return False, f"Fish Audio Exception: {str(e)}", None
     
     def _synthesize_google(
         self, 

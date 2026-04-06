@@ -494,7 +494,12 @@ def synthesize_audio(user_id, email):
         )
         
         if not success:
-            return jsonify({"error": f"TTS failed: {message}"}), 500
+            print(f"ERROR: All TTS synthesis methods failed: {message}")
+            return jsonify({
+                "error": f"Voice synthesis failed. {message}", 
+                "success": False,
+                "hint": "Check if API keys (FISH_AUDIO_API_KEY or HF_API_TOKEN) are set in environment variables."
+            }), 500
         
         if audio_bytes:
             # Return audio as base64 for easy client-side playback
