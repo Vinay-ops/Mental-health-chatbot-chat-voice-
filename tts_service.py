@@ -63,15 +63,18 @@ class EmotionalTTSService:
                 "Content-Type": "application/json"
             }
             
-            # According to Fish Audio API docs, model and format should be in the body
+            # Use a high-quality warm voice ID (Nicole - Warm Female)
+            voice_id = "7f18525e9f1a457494488b3f462a67e5" 
+            
             data = {
                 "text": formatted_text,
+                "reference_id": voice_id,
                 "model": "s1",
                 "format": "mp3",
                 "latency": "normal"
             }
             
-            print(f"DEBUG: Calling Fish Audio API (v1/tts)... (Key present: {bool(api_key)})")
+            print(f"DEBUG: Calling Fish Audio API (v1/tts) with model: {data['model']}, voice: {voice_id}")
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
@@ -81,7 +84,9 @@ class EmotionalTTSService:
                         f.write(audio_bytes)
                 return True, "Fish Audio synthesis successful", audio_bytes
             else:
-                return False, f"Fish Audio API error: {response.status_code} - {response.text}", None
+                error_msg = f"Fish Audio API error: {response.status_code} - {response.text}"
+                print(f"DEBUG: {error_msg}")
+                return False, error_msg, None
                 
         except Exception as e:
             return False, f"Fish Audio Exception: {str(e)}", None
