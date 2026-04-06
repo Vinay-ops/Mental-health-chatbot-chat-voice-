@@ -510,8 +510,8 @@ def synthesize_audio(user_id, email):
         print("CRITICAL: Unhandled exception in synthesize_audio:")
         traceback.print_exc()
         return jsonify({"error": f"Internal server error: {str(e)}", "success": False}), 500
-  
-  @app.route('/api/history/<session_id>', methods=['GET'])
+
+@app.route('/api/history/<session_id>', methods=['GET'])
 @token_required
 def get_history(user_id, email, session_id):
     if not db.check_connection():
