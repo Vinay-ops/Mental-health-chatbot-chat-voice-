@@ -61,20 +61,18 @@ class EmotionalTTSService:
             headers = {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
-                "model": "s1"  # Model specified in headers as per user's curl example
+                "model": "s1"
             }
             
-            # Use a high-quality warm voice ID (Nicole - Warm Female)
-            voice_id = "7f18525e9f1a457494488b3f462a67e5" 
-            
+            # Use minimal body to match working curl example exactly
             data = {
-                "text": formatted_text,
-                "reference_id": voice_id,
-                "format": "mp3",
-                "latency": "normal"
+                "text": formatted_text
             }
             
-            print(f"DEBUG: Calling Fish Audio API (v1/tts) with text: {formatted_text[:30]}...")
+            # Log masked key for verification
+            masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "****"
+            print(f"DEBUG: Calling Fish Audio API (v1/tts) with text: {formatted_text[:30]}... using key: {masked_key}")
+            
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:

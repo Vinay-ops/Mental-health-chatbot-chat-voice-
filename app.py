@@ -450,18 +450,23 @@ def chat_api():
 @app.route('/api/synthesize', methods=['POST'])
 @token_required
 def synthesize_audio(user_id, email):
-    # Log key presence (masked) for debugging Vercel environment
-    fish_key = os.getenv("FISH_AUDIO_API_KEY", "")
-    hf_key = os.getenv("HF_API_TOKEN", "")
-    print(f"DEBUG: TTS Request - Fish Key: {fish_key[:4]}...{fish_key[-2:] if len(fish_key)>4 else ''}, HF Key: {hf_key[:4]}...")
-    
     try:
+        # Verify environment variable exists
+        fish_key = os.getenv("FISH_AUDIO_API_KEY")
+        if not fish_key:
+            print("CRITICAL: FISH_AUDIO_API_KEY is NOT set in environment variables.")
+        else:
+            print(f"DEBUG: FISH_AUDIO_API_KEY is set (starts with: {fish_key[:4]}...)")
+
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+            
         text = data.get("text", "").strip()
         emotion = data.get("emotion", "empathetic").lower()
         
         # Validate inputs
-        if not text or len(text) == 0:
+        if not text:
             return jsonify({"error": "Text is required"}), 400
         
         if emotion not in ["empathetic", "calm", "encouraging", "supportive", "neutral"]:
@@ -487,31 +492,22 @@ def synthesize_audio(user_id, email):
             print(f"DEBUG: Synthesis successful, returning {len(audio_bytes)} bytes of audio.")
             # Return audio as base64 for easy client-side playback
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
-            
-            # Log the synthesis
-            try:
-                if db.check_connection():
-                    db.save_log("tts_synthesis", f"emotion:{emotion}, text_length:{len(text)}", user_id=user_id)
-            except Exception:
-                pass
-            
             return jsonify({
                 "success": True,
                 "audio": audio_b64,
-                "audio_format": "audio/mpeg",  # MP3 format
-                "emotion": emotion,
-                "text_length": len(text)
-            }), 200
+                "audio_format": "audio/mpeg",
+                "emotion": emotion
+            })
         else:
-            return jsonify({"error": "Audio synthesis returned empty"}), 500
+            return jsonify({"error": "No audio data received", "success": False}), 500
             
     except Exception as e:
-        print(f"CRITICAL TTS ERROR: {str(e)}")
         import traceback
+        print("CRITICAL: Unhandled exception in synthesize_audio:")
         traceback.print_exc()
-        return jsonify({"error": f"Internal TTS failure: {str(e)}", "success": False}), 500
-
-@app.route('/api/history/<session_id>', methods=['GET'])
+        return jsonify({"error": f"Internal server error: {str(e)}", "success": False}), 500
+  
+  @app.route('/api/history/<session_id>', methods=['GET'])
 @token_required
 def get_history(user_id, email, session_id):
     if not db.check_connection():
