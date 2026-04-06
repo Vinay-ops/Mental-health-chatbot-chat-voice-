@@ -463,17 +463,11 @@ def chat_api():
 @app.route('/api/synthesize', methods=['POST'])
 @token_required
 def synthesize_audio(user_id, email):
-    """
-    Convert chatbot response to emotional speech audio.
+    # Log key presence (masked) for debugging Vercel environment
+    fish_key = os.getenv("FISH_AUDIO_API_KEY", "")
+    hf_key = os.getenv("HF_API_TOKEN", "")
+    print(f"DEBUG: TTS Request - Fish Key: {fish_key[:4]}...{fish_key[-2:] if len(fish_key)>4 else ''}, HF Key: {hf_key[:4]}...")
     
-    Request JSON:
-    {
-        "text": "The response text to convert to speech",
-        "emotion": "empathetic|calm|encouraging|supportive|neutral"  # Optional, default: "empathetic"
-    }
-    
-    Response: Audio file (MP3) or JSON with base64 encoded audio
-    """
     try:
         data = request.get_json()
         text = data.get("text", "").strip()

@@ -129,18 +129,19 @@ class EmotionalTTSService:
             url = "https://api.fish.audio/v1/tts"
             headers = {
                 "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "model": "s1"
+                "Content-Type": "application/json"
             }
             
+            # According to most current Fish Audio API docs, model should be in the body
             data = {
                 "text": formatted_text,
+                "model": "s1",
                 "format": "mp3",
                 "latency": "normal"
             }
             
-            print(f"DEBUG: Calling Fish Audio API (v1/tts)...")
-            response = requests.post(url, headers=headers, json=data, timeout=15) # Reduced timeout for faster fallback
+            print(f"DEBUG: Calling Fish Audio API (v1/tts)... (Key present: {bool(api_key)})")
+            response = requests.post(url, headers=headers, json=data, timeout=15)
             
             if response.status_code == 200:
                 return True, "Fish Audio synthesis successful", response.content
