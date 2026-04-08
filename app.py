@@ -44,20 +44,33 @@ session_memory = {} # {session_id: [messages]}
 session_sentiment = {} # {session_id: current_mood}
 
 SAFE_SYSTEM_PROMPT = (
-    "You are MindCare Navigator, a specialized mental health AI assistant. "
+    "You are MindCare Navigator, a specialized mental health AI assistant with a UNIQUE, CONVERSATIONAL, and EMPATHETIC personality. "
     "Your PRIMARY identity is a compassionate, empathetic mental health companion for the MindCare Navigator project. "
     "NEVER break character. NEVER talk about being a machine or an AI unless it's to clarify safety boundaries. "
+    "\n"
+    "RESPONSE VARIATION (CRITICAL): You MUST vary your responses significantly—NEVER give the same response twice. "
+    "- Use different greeting styles (casual, warm, gentle, direct) "
+    "- Vary sentence structures and lengths "
+    "- Change your approach based on conversation history "
+    "- Use different examples and metaphors "
+    "- Mix validation with practical suggestions "
+    "\n"
     "STRICT TOPIC LIMIT: You ONLY answer questions related to mental health, emotional well-being, stress management, and the MindCare Navigator project itself. "
     "If a user asks about unrelated topics (like general coding, weather, politics, or general knowledge), you MUST politely refuse and redirect them back to mental health: "
     "'I am specialized in mental health support for MindCare Navigator. I cannot assist with that topic, but I'm here to listen to how you're feeling.' "
+    "\n"
     "Your tone must be warm, friendly, validating, and focused on emotional well-being. "
     "Speak like a caring friend who explains things gently, in simple sentences, and keeps responses supportive and hopeful. "
     "When a user shares a problem, first validate their feeling (e.g., 'It sounds like you're going through a lot, and it's completely understandable to feel this way'). "
+    "\n"
     "STRICT SAFETY PROTOCOL: "
     "1. If the user mentions self-harm, suicide, or severe crisis, you MUST provide a supportive message followed by specific crisis resources (e.g., '988 Suicide & Crisis Lifeline' in the US, or international equivalents). "
     "2. DO NOT provide clinical diagnoses. Use descriptive language like 'It sounds like you're experiencing symptoms of low mood.' "
     "3. DO NOT prescribe medication or specific medical treatments. "
-    "4. Respond ONLY in the requested language."
+    "4. Respond ONLY in the requested language. "
+    "\n"
+    "PERSONALITY TRAITS: Be curious, thoughtful, patient, and genuinely interested in the user's wellbeing. Ask follow-up questions. "
+    "Offer practical coping strategies when appropriate. Use supportive language that empowers the user."
 )
 
 NEAREST_PSYCHOLOGISTS = {
@@ -164,16 +177,56 @@ def token_required(f):
     return decorated
 
 def _fallback_response(message: str) -> str:
+    import random
     m = message.lower()
+    
+    # Greetings - varied responses
     if any(word in m for word in ["hello", "hi", "hey"]):
-        return "Hello! I’m here to support you. How are you feeling today?"
-    if any(word in m for word in ["stress", "stressed", "overwhelmed"]):
-        return "I’m sorry you’re feeling stressed. Want to try a simple 4-7-8 breathing exercise together?"
+        greetings = [
+            "Hello! I'm here to listen and support you. What's on your mind today?",
+            "Hi there! I'm glad you're here. How are you feeling?",
+            "Hey! Welcome. I'm here to help. What can we talk about?",
+            "Hello! I'm MindCare Navigator. How can I support you today?"
+        ]
+        return random.choice(greetings)
+    
+    # Stress/Overwhelm - varied responses
+    if any(word in m for word in ["stress", "stressed", "overwhelmed", "anxious"]):
+        stress_responses = [
+            "It sounds like you're carrying a lot right now. That's completely valid. Would you like to try some calming techniques?",
+            "I hear that you're feeling overwhelmed. Let's work through this together. A breathing exercise might help—interested?",
+            "That sounds challenging. Stress is your mind and body's way of responding. Let's explore what might help you feel better.",
+            "I'm sorry you're feeling this way. Want to try the 4-7-8 breathing exercise? It's quite effective."
+        ]
+        return random.choice(stress_responses)
+    
+    # Resources - varied responses
     if "resources" in m or "help" in m or "support" in m:
-        return "I can help explore support options. Are you looking for local helplines, clinics, or online groups?"
-    if "breathing" in m:
-        return "Let’s try the 4-7-8 technique: inhale 4s, hold 7s, exhale 8s. Shall we start?"
-    return "I hear you. Could you share a bit more? I’m here to listen and help you navigate options."
+        resource_responses = [
+            "Absolutely, I can help! Are you looking for local professional support, online communities, or wellness resources?",
+            "I'm here to help. Would you prefer information about mental health professionals, support groups, or other resources?",
+            "That's great that you're seeking support. Let me help—are you looking for clinics, helplines, or online resources?"
+        ]
+        return random.choice(resource_responses)
+    
+    # Breathing - varied responses
+    if "breathing" in m or "exercise" in m:
+        breathing_responses = [
+            "Great idea! Let's try the 4-7-8 breathing technique: breathe in for 4 counts, hold for 7, exhale for 8. Shall we?",
+            "Breathing exercises are powerful. Let me teach you the 4-7-8 method: in-4, hold-7, out-8. Ready to start?",
+            "Perfect choice. The 4-7-8 breathing pattern calms your nervous system. Let's practice together."
+        ]
+        return random.choice(breathing_responses)
+    
+    # Default - varied responses
+    default_responses = [
+        "I hear you. Could you share a bit more about what you're experiencing? I'm here to listen.",
+        "Thank you for sharing. Tell me more—I'm here to understand and support you.",
+        "I appreciate you opening up. What else would you like to talk about?",
+        "I'm listening. What's the main thing on your mind right now?",
+        "I'm here for you. Let's explore this together. Can you tell me more?"
+    ]
+    return random.choice(default_responses)
 
 def _gemini_reply(message: str, system_prompt: str) -> str:
     api_key = os.getenv("GEMINI_API_KEY")
@@ -193,7 +246,7 @@ def _gemini_reply(message: str, system_prompt: str) -> str:
             headers = {"Content-Type": "application/json"}
             payload = {
                 "contents": [{"parts": [{"text": f"{system_prompt}\n\nUser: {message}"}]}],
-                "generationConfig": {"temperature": 0.4, "topP": 0.8, "topK": 40}
+                "generationConfig": {"temperature": 0.8, "topP": 0.9, "topK": 50}
             }
             r = requests.post(url, json=payload, headers=headers, timeout=15)
             j = r.json()
@@ -219,7 +272,8 @@ def _grok_reply(message: str, system_prompt: str) -> str:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message},
             ],
-            "temperature": 0.4,
+            "temperature": 0.8,
+            "top_p": 0.9,
         }
         r = requests.post("https://api.x.ai/v1/chat/completions", json=payload, headers=headers, timeout=30)
         j = r.json()
@@ -241,6 +295,11 @@ def _ollama_reply(message: str, system_prompt: str) -> str:
             "model": model,
             "prompt": f"{system_prompt}\nUser: {message}\nAssistant:",
             "stream": False,
+            "options": {
+                "temperature": 0.8,
+                "top_p": 0.9,
+                "top_k": 50
+            }
         }
         r = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
         j = r.json()
@@ -267,7 +326,8 @@ def _groq_reply(message: str, system_prompt: str) -> str:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message}
                 ],
-                "temperature": 0.5,
+                "temperature": 0.8,
+                "top_p": 0.9,
                 "max_tokens": 1024
             }
             try:
@@ -288,7 +348,24 @@ def _groq_reply(message: str, system_prompt: str) -> str:
         print(f"Groq Exception: {e}")
         return None
 
-# --- Removed standalone _analyze_sentiment to favor combined prompt optimization ---
+# --- Response Diversity Helper ---
+def _randomize_system_prompt(base_prompt: str, provider: str) -> str:
+    """Add randomization to system prompt to encourage varied responses across different API calls."""
+    import random
+    
+    variation_instructions = [
+        "Vary your response structure from your previous responses. ",
+        "Use a slightly different tone—be more conversational. ",
+        "Add a relevant question or follow-up suggestion. ",
+        "Keep your response concise but warm. ",
+        "Be more curious and ask about context. ",
+    ]
+    
+    # Randomly add variation instruction
+    if random.random() > 0.3:  # 70% chance to add variation
+        base_prompt += f"\n{random.choice(variation_instructions)}"
+    
+    return base_prompt
 
 # --- Routes ---
 
@@ -385,6 +462,9 @@ def chat_api():
         "Choose sentiment_name from: [happy, sad, anxious, angry, calm, neutral]. "
         "Example: '[MOOD: calm] I am glad you are feeling peaceful...'"
     )
+    
+    # Apply randomization to encourage response diversity
+    current_system_prompt = _randomize_system_prompt(current_system_prompt, provider or "default")
     
     full_prompt_message = f"Recent History:\n{history_context}\n\nUser: {message}" if history_context else message
     
