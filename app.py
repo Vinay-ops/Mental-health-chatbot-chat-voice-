@@ -106,7 +106,7 @@ def _enforce_short_reply(text: str, max_lines: int = 5, max_words: int = 90) -> 
     return "\n".join(lines).strip()
 
 def _is_similar_to_recent_reply(session_id: str, reply: str) -> bool:
-    """Basic anti-repeat guard against duplicate/near-duplicate assistant replies."""
+    """Anti-repeat guard using exact + fuzzy similarity."""
     if not reply or session_id not in session_memory:
         return False
 
@@ -118,7 +118,64 @@ def _is_similar_to_recent_reply(session_id: str, reply: str) -> bool:
         if len(recent_assistant) >= 3:
             break
 
-    return any(reply_key == prev for prev in recent_assistant)
+    for prev in recent_assistant:
+        if reply_key == prev:
+            return True
+        if SequenceMatcher(None, reply_key, prev).ratio() >= 0.86:
+            return True
+
+    return False
+
+def _recent_assistant_snippets(session_id: str, max_items: int = 3):
+    if session_id not in session_memory:
+        return []
+    snippets = []
+    for role_name, content in reversed(session_memory[session_id]):
+        if role_name == "Assistant" and content:
+            snippets.append(str(content).strip())
+        if len(snippets) >= max_items:
+            break
+    return list(reversed(snippets))
+
+def _build_quality_prompt_addon(session_id: str):
+    recent = _recent_assistant_snippets(session_id, max_items=3)
+    if not recent:
+        return (
+            "\nREPLY QUALITY FORMAT:\n"
+            "- Use 3 short parts: (1) validate emotion, (2) one practical next step, (3) one gentle follow-up question.\n"
+            "- Keep reply under 5 lines and avoid filler.\n"
+        )
+
+    joined = "\n".join([f"- {r}" for r in recent])
+    return (
+        "\nREPLY QUALITY FORMAT:\n"
+        "- Use 3 short parts: (1) validate emotion, (2) one practical next step, (3) one gentle follow-up question.\n"
+        "- Keep reply under 5 lines and avoid filler.\n"
+        "- Do NOT reuse the same wording, openings, or sentence patterns from these recent assistant replies:\n"
+        f"{joined}\n"
+        "- Write a fresh, meaningfully different response.\n"
+    )
+
+def _generate_reply_with_provider(provider: str, full_prompt_message: str, current_system_prompt: str):
+    raw_reply = None
+    if provider == "groq":
+        raw_reply = _groq_reply(full_prompt_message, current_system_prompt)
+    elif provider == "gemini":
+        raw_reply = _gemini_reply(full_prompt_message, current_system_prompt)
+    elif provider == "grok":
+        raw_reply = _grok_reply(full_prompt_message, current_system_prompt)
+
+    # IF CLOUD FAILS OR OLLAMA IS SELECTED, TRY OLLAMA (OFFLINE)
+    if not raw_reply:
+        print("DEBUG: Cloud provider failed or not available. Falling back to Ollama (Offline Mode)...")
+        raw_reply = _ollama_reply(full_prompt_message, current_system_prompt)
+
+    # FINAL FALLBACK (IF BOTH FAIL)
+    if not raw_reply:
+        print("DEBUG: Both Cloud and Ollama failed. Using local fallback rules.")
+        raw_reply = _fallback_response(full_prompt_message)
+
+    return raw_reply
 
 NEAREST_PSYCHOLOGISTS = {
     "mumbai": [
@@ -298,6 +355,17 @@ def _fetch_live_psychologists(location_query: str, limit: int = 8):
 
         payload = resp.json()
         results = []
+        include_terms = (
+            "psychologist", "psychology", "psychotherapist", "therapy",
+            "therapist", "counselor", "counsellor", "mental health",
+            "psychiatrist", "psychiatry"
+        )
+        exclude_terms = (
+            "dentist", "cardio", "cardiolog", "orthopedic", "orthopaedic",
+            "neurolog", "pediatric", "paediatric", "dermatolog", "ent ",
+            "ophthalm", "eye hospital", "general hospital", "multispecial",
+            "physician", "surgeon", "gynaec", "gynec", "urolog", "oncolog"
+        )
         for item in payload:
             display_name = (item.get("display_name") or "").strip()
             if not display_name:
@@ -306,6 +374,13 @@ def _fetch_live_psychologists(location_query: str, limit: int = 8):
             title = (item.get("name") or "").strip()
             if not title:
                 title = display_name.split(",")[0].strip()
+
+            # Keep only psychologist/mental-health related places.
+            searchable = f"{title} {display_name}".lower()
+            if not any(term in searchable for term in include_terms):
+                continue
+            if any(term in searchable for term in exclude_terms):
+                continue
 
             lat = item.get("lat")
             lon = item.get("lon")
@@ -644,6 +719,7 @@ def chat_api():
         "Choose sentiment_name from: [happy, sad, anxious, angry, calm, neutral]. "
         "Example: '[MOOD: calm] I am glad you are feeling peaceful...'"
     )
+    current_system_prompt += _build_quality_prompt_addon(session_id)
     
     # Apply randomization to encourage response diversity
     current_system_prompt = _randomize_system_prompt(current_system_prompt, provider or "default")
@@ -660,24 +736,7 @@ def chat_api():
     except Exception:
         pass
         
-    raw_reply = None
-    # TRY CLOUD FIRST (ONLINE)
-    if provider == "groq":
-        raw_reply = _groq_reply(full_prompt_message, current_system_prompt)
-    elif provider == "gemini":
-        raw_reply = _gemini_reply(full_prompt_message, current_system_prompt)
-    elif provider == "grok":
-        raw_reply = _grok_reply(full_prompt_message, current_system_prompt)
-    
-    # IF CLOUD FAILS OR OLLAMA IS SELECTED, TRY OLLAMA (OFFLINE)
-    if not raw_reply:
-        print("DEBUG: Cloud provider failed or not available. Falling back to Ollama (Offline Mode)...")
-        raw_reply = _ollama_reply(full_prompt_message, current_system_prompt)
-    
-    # FINAL FALLBACK (IF BOTH FAIL)
-    if not raw_reply:
-        print("DEBUG: Both Cloud and Ollama failed. Using local fallback rules.")
-        raw_reply = _fallback_response(message)
+    raw_reply = _generate_reply_with_provider(provider, full_prompt_message, current_system_prompt)
         
     # Parse sentiment and reply
     sentiment = "neutral"
@@ -695,10 +754,31 @@ def chat_api():
     # Ensure concise final output for UI (about 4-5 lines)
     reply = _enforce_short_reply(reply)
 
-    # Avoid sending the same answer repeatedly in a session
+    # Avoid sending the same answer repeatedly in a session.
+    # One regeneration attempt with explicit anti-repeat guidance.
     if _is_similar_to_recent_reply(session_id, reply):
-        alt = _fallback_response(message)
-        reply = _enforce_short_reply(alt)
+        retry_prompt = (
+            current_system_prompt
+            + "\nRETRY INSTRUCTION: Your previous candidate was too similar to recent replies. "
+              "Use a new structure, new phrasing, and different coping suggestion."
+        )
+        retry_raw = _generate_reply_with_provider(provider, full_prompt_message, retry_prompt)
+        retry_reply = retry_raw
+        if "[MOOD:" in retry_raw:
+            try:
+                retry_parts = retry_raw.split("]", 1)
+                retry_mood = retry_parts[0].replace("[MOOD:", "").strip().lower()
+                if retry_mood in ["happy", "sad", "anxious", "angry", "calm", "neutral"]:
+                    sentiment = retry_mood
+                retry_reply = retry_parts[1].strip()
+            except Exception:
+                pass
+        retry_reply = _enforce_short_reply(retry_reply)
+        if not _is_similar_to_recent_reply(session_id, retry_reply):
+            reply = retry_reply
+        else:
+            # Last resort keeps response helpful and concise.
+            reply = _enforce_short_reply(_fallback_response(message))
             
     session_sentiment[session_id] = sentiment
         

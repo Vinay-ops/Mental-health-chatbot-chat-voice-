@@ -104,9 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsBox.innerHTML = list;
                 feedback.innerHTML = '<span class="text-success">' + t('locator_success') + '</span>';
             } else {
-                const message = data.message || 'No specific psychologists found in our sample list for this area.';
-                resultsBox.innerHTML = '<div class="text-muted">' + message + '</div>';
-                feedback.innerHTML = '<span class="text-muted">' + t('locator_no_results') + '</span>';
+                // Intentionally keep UI silent for empty live results.
+                resultsBox.innerHTML = '';
+                feedback.innerHTML = '';
             }
         } catch (e) {
             console.error(e);
