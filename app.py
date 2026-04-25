@@ -54,6 +54,7 @@ SAFE_SYSTEM_PROMPT = (
     "- Change your approach based on conversation history "
     "- Use different examples and metaphors "
     "- Mix validation with practical suggestions "
+    "- Keep responses SHORT: 4-5 lines max, simple language, no long paragraphs "
     "\n"
     "STRICT TOPIC LIMIT: You ONLY answer questions related to mental health, emotional well-being, stress management, and the MindCare Navigator project itself. "
     "If a user asks about unrelated topics (like general coding, weather, politics, or general knowledge), you MUST politely refuse and redirect them back to mental health: "
@@ -72,6 +73,50 @@ SAFE_SYSTEM_PROMPT = (
     "PERSONALITY TRAITS: Be curious, thoughtful, patient, and genuinely interested in the user's wellbeing. Ask follow-up questions. "
     "Offer practical coping strategies when appropriate. Use supportive language that empowers the user."
 )
+
+def _enforce_short_reply(text: str, max_lines: int = 5, max_words: int = 90) -> str:
+    """Keep final assistant reply concise and readable."""
+    if not text:
+        return text
+
+    # Normalize whitespace first
+    normalized = " ".join(str(text).split())
+    words = normalized.split()
+    if len(words) > max_words:
+        normalized = " ".join(words[:max_words]).rstrip(" ,;:-")
+        if not normalized.endswith((".", "!", "?")):
+            normalized += "."
+
+    # Convert long paragraph into short line chunks (~18 words/line)
+    target_words_per_line = 18
+    line_words = normalized.split()
+    lines = []
+    current = []
+    for w in line_words:
+        current.append(w)
+        if len(current) >= target_words_per_line:
+            lines.append(" ".join(current))
+            current = []
+    if current:
+        lines.append(" ".join(current))
+
+    lines = lines[:max_lines]
+    return "\n".join(lines).strip()
+
+def _is_similar_to_recent_reply(session_id: str, reply: str) -> bool:
+    """Basic anti-repeat guard against duplicate/near-duplicate assistant replies."""
+    if not reply or session_id not in session_memory:
+        return False
+
+    reply_key = " ".join(reply.lower().split())
+    recent_assistant = []
+    for role_name, content in reversed(session_memory[session_id]):
+        if role_name == "Assistant":
+            recent_assistant.append(" ".join(str(content).lower().split()))
+        if len(recent_assistant) >= 3:
+            break
+
+    return any(reply_key == prev for prev in recent_assistant)
 
 NEAREST_PSYCHOLOGISTS = {
     "mumbai": [
@@ -246,7 +291,7 @@ def _gemini_reply(message: str, system_prompt: str) -> str:
             headers = {"Content-Type": "application/json"}
             payload = {
                 "contents": [{"parts": [{"text": f"{system_prompt}\n\nUser: {message}"}]}],
-                "generationConfig": {"temperature": 0.8, "topP": 0.9, "topK": 50}
+                "generationConfig": {"temperature": 0.9, "topP": 0.95, "topK": 50, "maxOutputTokens": 220}
             }
             r = requests.post(url, json=payload, headers=headers, timeout=15)
             j = r.json()
@@ -272,8 +317,9 @@ def _grok_reply(message: str, system_prompt: str) -> str:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message},
             ],
-            "temperature": 0.8,
+            "temperature": 0.95,
             "top_p": 0.9,
+            "max_tokens": 220,
         }
         r = requests.post("https://api.x.ai/v1/chat/completions", json=payload, headers=headers, timeout=30)
         j = r.json()
@@ -296,9 +342,10 @@ def _ollama_reply(message: str, system_prompt: str) -> str:
             "prompt": f"{system_prompt}\nUser: {message}\nAssistant:",
             "stream": False,
             "options": {
-                "temperature": 0.8,
+                "temperature": 0.95,
                 "top_p": 0.9,
-                "top_k": 50
+                "top_k": 50,
+                "num_predict": 220
             }
         }
         r = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
@@ -326,9 +373,9 @@ def _groq_reply(message: str, system_prompt: str) -> str:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message}
                 ],
-                "temperature": 0.8,
+                "temperature": 0.95,
                 "top_p": 0.9,
-                "max_tokens": 1024
+                "max_tokens": 220
             }
             try:
                 r = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=8)
@@ -509,6 +556,14 @@ def chat_api():
             reply = parts[1].strip()
         except Exception:
             pass
+
+    # Ensure concise final output for UI (about 4-5 lines)
+    reply = _enforce_short_reply(reply)
+
+    # Avoid sending the same answer repeatedly in a session
+    if _is_similar_to_recent_reply(session_id, reply):
+        alt = _fallback_response(message)
+        reply = _enforce_short_reply(alt)
             
     session_sentiment[session_id] = sentiment
         
