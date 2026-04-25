@@ -1,6 +1,8 @@
 import os
 import collections
 import base64
+import re
+from difflib import SequenceMatcher
 # Fix for Python 3.10+ where MutableMapping moved to collections.abc
 if not hasattr(collections, 'MutableMapping'):
     import collections.abc
@@ -173,6 +175,28 @@ NEAREST_PSYCHOLOGISTS = {
     ]
 }
 
+# Common aliases/nearby terms mapped to supported city keys
+CITY_ALIASES = {
+    "new delhi": "delhi",
+    "ncr": "delhi",
+    "delhi ncr": "delhi",
+    "gurgaon": "delhi",
+    "gurugram": "delhi",
+    "noida": "delhi",
+    "ghaziabad": "delhi",
+    "thane": "mumbai",
+    "navi mumbai": "mumbai",
+    "bombay": "mumbai",
+    "blr": "bengaluru",
+    "bengalooru": "bengaluru",
+    "bangaluru": "bengaluru",
+    "madras": "chennai",
+    "calcuttA".lower(): "kolkata",
+    "hyd": "hyderabad",
+    "ahmedbad": "ahmedabad",
+    "lko": "lucknow",
+}
+
 pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change")
 JWT_ALGO = "HS256"
@@ -188,6 +212,117 @@ def _verify_password(p: str, h: str) -> bool:
         return pwd_context.verify(p, h)
     except Exception:
         return False
+
+def _normalize_location_text(text: str) -> str:
+    cleaned = (text or "").strip().lower()
+    cleaned = re.sub(r"[^a-z\s,]", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip()
+
+def _resolve_supported_city(location_raw: str):
+    """
+    Resolve a free-text location to one of our supported city keys.
+    Returns (city_key, confidence) or (None, 0.0).
+    """
+    location = _normalize_location_text(location_raw)
+    if not location:
+        return None, 0.0
+
+    # 1) Direct key match by full text or contains
+    for city_key in NEAREST_PSYCHOLOGISTS.keys():
+        if location == city_key or city_key in location:
+            return city_key, 1.0
+
+    # 2) Alias contains or exact alias match
+    for alias, mapped_city in CITY_ALIASES.items():
+        if location == alias or alias in location:
+            return mapped_city, 0.95
+
+    # 3) Token-based exact matches
+    tokens = [t for t in re.split(r"[,\s]+", location) if t]
+    token_set = set(tokens)
+    for city_key in NEAREST_PSYCHOLOGISTS.keys():
+        city_tokens = set(city_key.split())
+        if city_tokens.issubset(token_set):
+            return city_key, 0.9
+
+    for alias, mapped_city in CITY_ALIASES.items():
+        alias_tokens = set(alias.split())
+        if alias_tokens.issubset(token_set):
+            return mapped_city, 0.88
+
+    # 4) Fuzzy fallback against keys + aliases
+    best_city = None
+    best_score = 0.0
+
+    candidates = list(NEAREST_PSYCHOLOGISTS.keys()) + list(CITY_ALIASES.keys())
+    for token in tokens:
+        for candidate in candidates:
+            score = SequenceMatcher(None, token, candidate).ratio()
+            if score > best_score:
+                best_score = score
+                best_city = CITY_ALIASES.get(candidate, candidate)
+
+    if best_city and best_score >= 0.72:
+        return best_city, best_score
+
+    return None, 0.0
+
+def _fetch_live_psychologists(location_query: str, limit: int = 8):
+    """
+    Fetch live psychologist-related places using OpenStreetMap Nominatim.
+    Returns normalized list compatible with the locator UI.
+    """
+    cleaned = (location_query or "").strip()
+    if not cleaned:
+        return []
+
+    try:
+        headers = {
+            "User-Agent": "MindCareNavigator/1.0 (mental health support app)"
+        }
+        params = {
+            "q": f"psychologist near {cleaned}",
+            "format": "jsonv2",
+            "addressdetails": 1,
+            "limit": max(1, min(int(limit), 12)),
+        }
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            headers=headers,
+            params=params,
+            timeout=12
+        )
+        if not resp.ok:
+            return []
+
+        payload = resp.json()
+        results = []
+        for item in payload:
+            display_name = (item.get("display_name") or "").strip()
+            if not display_name:
+                continue
+
+            title = (item.get("name") or "").strip()
+            if not title:
+                title = display_name.split(",")[0].strip()
+
+            lat = item.get("lat")
+            lon = item.get("lon")
+            map_url = f"https://www.google.com/maps?q={lat},{lon}" if lat and lon else None
+
+            results.append({
+                "name": title,
+                "address": display_name,
+                "phone": "Not listed publicly",
+                "source": "OpenStreetMap",
+                "map_url": map_url,
+            })
+
+        return results[:limit]
+    except Exception as e:
+        print(f"DEBUG: Live psychologist lookup failed: {e}")
+        return []
 
 def _make_token(user_id, email: str) -> str:
     payload = {
@@ -735,18 +870,20 @@ def contact_api():
 def psychologists_api():
     data = request.json or {}
     location_raw = data.get('location') or ""
-    location = location_raw.strip().lower()
-    results = []
-    for key, items in NEAREST_PSYCHOLOGISTS.items():
-        if key in location:
-            results = items
-            break
+    if not str(location_raw).strip():
+        return jsonify({"error": "Location is required"}), 400
+
+    # Real-time lookup (no hardcoded city dependency)
+    results = _fetch_live_psychologists(location_raw, limit=8)
     if not results:
         return jsonify({
             "results": [],
-            "message": "I could not find specific psychologists for your area, but you can contact your nearest hospital, mental health helpline, or licensed psychologist directory for local support."
+            "message": "I could not find live psychologist listings for this location right now. Please try nearby area names or check Google Maps results shown on the right."
         })
-    return jsonify({"results": results})
+    return jsonify({
+        "results": results,
+        "source": "live"
+    })
 
 @app.route('/community')
 def community_page():
