@@ -35,6 +35,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const SpeechRecognition = window.Recognition || window.webkitSpeechRecognition;
     let recognition = null;
 
+    function handleAuthError(contextLabel = 'session') {
+        // Token is missing/expired/invalid. Clear it to avoid repeated 401 loops.
+        localStorage.removeItem('authToken');
+        if (historyLoading) historyLoading.style.display = 'none';
+        if (historyEmpty) {
+            historyEmpty.style.display = 'block';
+            historyEmpty.innerHTML = `
+                <i class="bi bi-shield-lock fs-1 text-muted opacity-25"></i>
+                <p class="small text-muted mt-2">Your login session expired. Please login again to view ${contextLabel} history.</p>
+            `;
+        }
+    }
+
     // --- Initialization ---
     async function initSession() {
         const storedSessionId = localStorage.getItem('chat_session_id');
@@ -89,6 +102,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const sessions = await res.json();
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    handleAuthError('chat');
+                    return;
+                }
+                throw new Error(sessions?.error || 'Failed to load sessions');
+            }
+
+            if (!Array.isArray(sessions)) {
+                throw new Error('Invalid sessions payload');
+            }
             historyLoading.style.display = 'none';
 
             if (sessions.length === 0) {
@@ -131,6 +156,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const history = await res.json();
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    handleAuthError('chat');
+                    return;
+                }
+                throw new Error(history?.error || 'Failed to load history');
+            }
+
+            if (!Array.isArray(history)) {
+                throw new Error('Invalid history payload');
+            }
             typingIndicator.style.display = 'none';
 
             if (history.length === 0) {
