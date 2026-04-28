@@ -677,22 +677,27 @@ def contact():
     return render_template('contact.html')
 
 @app.route('/login')
+@app.route('/login.html')
 def login_page():
     return render_template('login.html')
 
 @app.route('/register')
+@app.route('/register.html')
 def register_page():
     return render_template('register.html')
 
 @app.route('/psychologist-list')
+@app.route('/psychologist-list.html')
 def psychologist_list():
     return render_template('psychologist-list.html')
 
 @app.route('/psychologist-chat')
+@app.route('/psychologist-chat.html')
 def psychologist_chat():
     return render_template('psychologist-chat.html')
 
 @app.route('/psychologist-dashboard')
+@app.route('/psychologist-dashboard.html')
 def psychologist_dashboard():
     return render_template('psychologist-dashboard.html')
 

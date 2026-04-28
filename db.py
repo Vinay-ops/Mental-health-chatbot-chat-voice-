@@ -447,6 +447,7 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
     """Get direct messages between two users"""
     user1_aliases = get_user_identifier_aliases(user1_id)
     user2_aliases = get_user_identifier_aliases(user2_id)
+    all_aliases = list(set(user1_aliases + user2_aliases))
 
     conn = get_db_connection()
     if not conn:
@@ -458,15 +459,25 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
         cursor.execute("""
             SELECT id, sender_id, receiver_id, message, is_read, created_at
             FROM direct_messages
-            WHERE (sender_id = ANY(%s) AND receiver_id = ANY(%s))
-               OR (sender_id = ANY(%s) AND receiver_id = ANY(%s))
+            WHERE sender_id = ANY(%s) OR receiver_id = ANY(%s)
             ORDER BY created_at ASC
             LIMIT %s
-        """, (user1_aliases, user2_aliases, user2_aliases, user1_aliases, limit))
-        messages = cursor.fetchall()
+        """, (all_aliases, all_aliases, limit * 3))
+        rows = cursor.fetchall()
         cursor.close()
         conn.close()
-        return messages
+
+        user1_set = set(user1_aliases)
+        user2_set = set(user2_aliases)
+        messages = [
+            row for row in rows
+            if (
+                str(row.get("sender_id")) in user1_set and str(row.get("receiver_id")) in user2_set
+            ) or (
+                str(row.get("sender_id")) in user2_set and str(row.get("receiver_id")) in user1_set
+            )
+        ]
+        return messages[-limit:]
     except Exception as e:
         print(f"ERROR: Error getting messages: {e}")
         try:
