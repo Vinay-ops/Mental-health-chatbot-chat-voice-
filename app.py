@@ -28,6 +28,24 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Add CORS headers to all responses
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
+
+# Handle preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response
+
 # Initialize TTS Service (with proper error handling)
 try:
     from tts_service import EmotionalTTSService
@@ -399,10 +417,11 @@ def _fetch_live_psychologists(location_query: str, limit: int = 8):
         print(f"DEBUG: Live psychologist lookup failed: {e}")
         return []
 
-def _make_token(user_id, email: str) -> str:
+def _make_token(user_id, email: str, user_type: str = "user") -> str:
     payload = {
         "sub": str(user_id),
         "email": email,
+        "user_type": user_type,
         "exp": datetime.utcnow() + timedelta(minutes=JWT_EXP_MIN),
         "iat": datetime.utcnow(),
     }
@@ -658,6 +677,18 @@ def login_page():
 def register_page():
     return render_template('register.html')
 
+@app.route('/psychologist-list')
+def psychologist_list():
+    return render_template('psychologist-list.html')
+
+@app.route('/psychologist-chat')
+def psychologist_chat():
+    return render_template('psychologist-chat.html')
+
+@app.route('/psychologist-dashboard')
+def psychologist_dashboard():
+    return render_template('psychologist-dashboard.html')
+
 # --- API Endpoints ---
 
 @app.route('/api/chat', methods=['POST'])
@@ -693,13 +724,12 @@ def chat_api():
     # 2. Memory Management
     if session_id not in session_memory:
         session_memory[session_id] = []
-        # ALWAYS try to pull history from DB if session exists but memory is empty (e.g. server restart)
-        if db.check_connection():
-            db_history = db.get_chat_history(user_id, session_id)
-            for h in db_history:
-                # Store as tuple (role, content)
-                role_name = "User" if h['role'] == 'user' else "Assistant"
-                session_memory[session_id].append((role_name, h['content']))
+        # Pull history via unified DB layer (supports local JSON fallback when offline).
+        db_history = db.get_chat_history(user_id, session_id)
+        for h in db_history:
+            # Store as tuple (role, content)
+            role_name = "User" if h['role'] == 'user' else "Assistant"
+            session_memory[session_id].append((role_name, h['content']))
     
     # Get last 10 messages for context (increased from 5 to 10 for better memory)
     history = session_memory[session_id][-10:]
@@ -729,10 +759,9 @@ def chat_api():
     if not provider:
         provider = "groq" if os.getenv("GROQ_API_KEY") else ("gemini" if os.getenv("GEMINI_API_KEY") else "ollama")
     
-    # Save user message to DB
+    # Save user message (DB layer handles remote + local fallback).
     try:
-        if db.check_connection():
-            db.save_log("user", message, user_id=user_id, session_id=session_id)
+        db.save_log("user", message, user_id=user_id, session_id=session_id)
     except Exception:
         pass
         
@@ -788,10 +817,9 @@ def chat_api():
     if len(session_memory[session_id]) > 20:
         session_memory[session_id] = session_memory[session_id][-20:]
 
-    # Save assistant reply to DB
+    # Save assistant reply (DB layer handles remote + local fallback).
     try:
-        if db.check_connection():
-            db.save_log("assistant", reply, user_id=user_id, session_id=session_id)
+        db.save_log("assistant", reply, user_id=user_id, session_id=session_id)
     except Exception:
         pass
         
@@ -864,8 +892,6 @@ def synthesize_audio(user_id, email):
 @app.route('/api/history/<session_id>', methods=['GET'])
 @token_required
 def get_history(user_id, email, session_id):
-    if not db.check_connection():
-        return jsonify({"error": "Database error"}), 503
     history = db.get_chat_history(user_id, session_id)
     # Convert datetime to string for JSON
     for h in history:
@@ -878,8 +904,6 @@ def get_history(user_id, email, session_id):
 @app.route('/api/sessions', methods=['GET'])
 @token_required
 def get_sessions(user_id, email):
-    if not db.check_connection():
-        return jsonify({"error": "Database error"}), 503
     sessions = db.get_user_sessions(user_id)
     return jsonify(sessions)
 
@@ -895,9 +919,13 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password')
     name = data.get('name')
+    user_type = data.get('user_type', 'user')  # 'user' or 'psychologist'
     
     if not email or not password or not name:
         return jsonify({"error": "Missing fields"}), 400
+    
+    if user_type not in ['user', 'psychologist']:
+        return jsonify({"error": "Invalid user type"}), 400
         
     db.check_connection() # Update _use_json_fallback status
 
@@ -905,12 +933,12 @@ def register():
     if existing:
         return jsonify({"error": "Email already registered"}), 400
         
-    uid = db.create_user(email, _hash_password(password), name)
+    uid = db.create_user(email, _hash_password(password), name, user_type)
     if not uid:
         return jsonify({"error": "Registration failed"}), 500
         
-    token = _make_token(uid, email)
-    return jsonify({"token": token, "name": name})
+    token = _make_token(email, email, user_type)
+    return jsonify({"token": token, "name": name, "user_type": user_type})
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -926,9 +954,12 @@ def login():
     user = db.get_user_by_email(email)
     if not user or not _verify_password(password, user["password_hash"]):
         return jsonify({"error": "Invalid credentials"}), 401
-        
-    token = _make_token(user["_id"], user["email"])
-    return jsonify({"token": token, "name": user.get("name", "User")})
+    
+    user_type = user.get("user_type", "user")
+    # Use email as user_id since that's the unique identifier in our system
+    token = _make_token(user["email"], user["email"], user_type)
+    print(f"DEBUG LOGIN: Created token for {user['email']} with type {user_type}")
+    return jsonify({"token": token, "name": user.get("name", "User"), "user_type": user_type})
 
 @app.route('/api/contact', methods=['POST'])
 def contact_api():
@@ -1016,6 +1047,297 @@ def community_like_post(post_id: int):
     if likes is None:
         return jsonify({"error": "Could not like post"}), 400
     return jsonify({"likes": likes})
+
+# ===== Psychologist API Endpoints =====
+
+@app.route('/api/psychologist/users', methods=['GET'])
+@token_required
+def get_psychologist_users_endpoint(current_user_id, current_user_email):
+    """Get list of users assigned to a psychologist"""
+    db.check_connection()
+    
+    print(f"DEBUG CLIENTS: Starting - current_user_email={current_user_email}, current_user_id={current_user_id}")
+    
+    # Get user info to verify they're a psychologist
+    user = db.get_user_by_email(current_user_email)
+    print(f"DEBUG CLIENTS: User found: {user}")
+    
+    if not user:
+        print(f"DEBUG CLIENTS: User not found in database")
+        return jsonify({"error": "User not found"}), 403
+    
+    user_type = user.get("user_type", "user")
+    print(f"DEBUG CLIENTS: User type: {user_type}")
+    
+    if user_type != "psychologist":
+        print(f"DEBUG CLIENTS: Not a psychologist - user_type is '{user_type}'")
+        return jsonify({"error": "Unauthorized - not a psychologist"}), 403
+    
+    print(f"DEBUG CLIENTS: Authorization passed - getting accepted chat users")
+    
+    # Get users from accepted chat requests
+    users = db.get_accepted_chat_users(current_user_email)
+    print(f"DEBUG CLIENTS: Found {len(users)} users for psychologist")
+    return jsonify({"users": users})
+
+@app.route('/api/psychologist/connect', methods=['POST'])
+@token_required
+def connect_psychologist(current_user_id, current_user_email):
+    """Connect a psychologist to a user for direct messaging"""
+    data = request.json
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+    
+    db.check_connection()
+    
+    # Verify psychologist
+    user = db.get_user_by_email(current_user_email)
+    if not user or user.get("user_type") != "psychologist":
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    # Connect
+    success = db.connect_psychologist_to_user(current_user_email, user_id)
+    if success:
+        return jsonify({"success": True, "message": "Connected to user"})
+    else:
+        return jsonify({"error": "Failed to connect"}), 500
+
+@app.route('/api/messages/send', methods=['POST'])
+@token_required
+def send_direct_message(current_user_id, current_user_email):
+    """Send a direct message between psychologist and user"""
+    data = request.json
+    receiver_id = data.get('receiver_id')
+    message_text = data.get('message')
+    
+    print(f"DEBUG MESSAGE SEND: From {current_user_email} to {receiver_id}: {message_text}")
+    
+    if not receiver_id or not message_text:
+        return jsonify({"error": "Missing fields"}), 400
+    
+    db.check_connection()
+    
+    # Save the message
+    success = db.save_direct_message(current_user_email, receiver_id, message_text)
+    print(f"DEBUG MESSAGE SEND: Success = {success}")
+    if success:
+        return jsonify({"success": True, "message": "Message sent"})
+    else:
+        return jsonify({"error": "Failed to send message"}), 500
+
+@app.route('/api/messages/<other_user_id>', methods=['GET'])
+@token_required
+def get_direct_messages(current_user_id, current_user_email, other_user_id):
+    """Get direct messages between two users"""
+    db.check_connection()
+    
+    print(f"DEBUG MESSAGE GET: Getting messages between {current_user_email} and {other_user_id}")
+    
+    limit = request.args.get('limit', 100, type=int)
+    messages = db.get_direct_messages(current_user_email, other_user_id, limit)
+    
+    print(f"DEBUG MESSAGE GET: Found {len(messages)} messages")
+    return jsonify({"messages": messages})
+
+# ===== Chat Request Endpoints =====
+
+@app.route('/api/psychologists/available', methods=['GET'])
+@token_required
+def get_available_psychologists(current_user_id, current_user_email):
+    """Get list of available psychologists"""
+    try:
+        print(f"DEBUG AUTH: Endpoint called for user {current_user_email}")
+        db.check_connection()
+        
+        psychologists = db.get_available_psychologists(exclude_user_email=current_user_email)
+        print(f"DEBUG AUTH: Found {len(psychologists)} psychologists: {psychologists}")
+        
+        return jsonify({"psychologists": psychologists})
+    except Exception as e:
+        print(f"DEBUG AUTH: Error in endpoint - {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/debug/users', methods=['GET'])
+def debug_users():
+    """Debug endpoint to check all users - NO AUTH REQUIRED"""
+    try:
+        print("DEBUG ENDPOINT: Starting...")
+        data = db._load_json_db()
+        print(f"DEBUG ENDPOINT: Data loaded: {data}")
+        users = data.get("users", [])
+        print(f"DEBUG ENDPOINT: Found {len(users)} users")
+        for idx, user in enumerate(users):
+            print(f"DEBUG ENDPOINT: User {idx}: {user.get('name')} - Type: {user.get('user_type')}")
+        return jsonify({"debug": "Users loaded", "users": users, "total": len(users)})
+    except Exception as e:
+        print(f"DEBUG ENDPOINT: Error - {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/debug/psychologists', methods=['GET'])
+def debug_psychologists():
+    """Debug endpoint to check psychologists - NO AUTH REQUIRED"""
+    try:
+        print("DEBUG PSYCHO: Starting...")
+        psychologists = db.get_available_psychologists()
+        print(f"DEBUG PSYCHO: Got {len(psychologists)} psychologists")
+        return jsonify({"psychologists": psychologists, "count": len(psychologists)})
+    except Exception as e:
+        print(f"DEBUG PSYCHO: Error - {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chat-request/send', methods=['POST'])
+@token_required
+def send_chat_request(current_user_id, current_user_email):
+    """Send a chat request to a psychologist"""
+    db.check_connection()
+    
+    data = request.json or {}
+    psychologist_id = db.resolve_user_identifier(data.get('psychologist_id'))
+    message = data.get('message', '')
+    
+    print(f"DEBUG SEND REQUEST: From {current_user_email} to psychologist {psychologist_id}")
+    print(f"DEBUG SEND REQUEST: Message: {message}")
+    
+    if not psychologist_id:
+        return jsonify({"error": "psychologist_id required"}), 400
+    
+    # Generate unique request ID
+    import uuid
+    request_id = str(uuid.uuid4())
+    
+    # Create chat request
+    result = db.create_chat_request(request_id, current_user_email, psychologist_id, message)
+    print(f"DEBUG SEND REQUEST: Chat request created - {request_id}")
+    
+    return jsonify({
+        "success": True,
+        "request_id": request_id
+    })
+
+@app.route('/api/chat-request/<request_id>/status', methods=['GET'])
+@token_required
+def get_chat_request_status(current_user_id, current_user_email, request_id):
+    """Get status of a chat request"""
+    db.check_connection()
+    
+    chat_request = db.get_chat_request(request_id)
+    
+    if not chat_request:
+        return jsonify({"error": "Request not found"}), 404
+    
+    return jsonify({
+        "request_id": chat_request.get("request_id"),
+        "status": chat_request.get("status"),
+        "psychologist_id": chat_request.get("psychologist_id"),
+        "user_id": chat_request.get("user_id")
+    })
+
+@app.route('/api/chat-request/<request_id>/accept', methods=['POST'])
+@token_required
+def accept_chat_request(current_user_id, current_user_email, request_id):
+    """Psychologist accepts a chat request"""
+    db.check_connection()
+    
+    print(f"DEBUG ACCEPT: Accepting request {request_id} by {current_user_email}")
+    
+    chat_request = db.get_chat_request(request_id)
+    print(f"DEBUG ACCEPT: Chat request found: {chat_request}")
+    
+    if not chat_request:
+        return jsonify({"error": "Request not found"}), 404
+    
+    # Verify psychologist is the one accepting (compare emails since that's our unique ID)
+    request_psychologist_id = db.resolve_user_identifier(chat_request.get("psychologist_id"))
+    current_ids = [db.resolve_user_identifier(current_user_email), db.resolve_user_identifier(current_user_id)]
+    if request_psychologist_id not in current_ids:
+        print(f"DEBUG ACCEPT: Unauthorized - {chat_request.get('psychologist_id')} != {current_user_email}/{current_user_id}")
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    # Update status to accepted
+    db.update_chat_request_status(request_id, "accepted")
+    print(f"DEBUG ACCEPT: Request {request_id} status updated to accepted")
+    
+    return jsonify({
+        "success": True,
+        "message": "Chat request accepted"
+    })
+
+@app.route('/api/chat-request/<request_id>/reject', methods=['POST'])
+@token_required
+def reject_chat_request(current_user_id, current_user_email, request_id):
+    """Psychologist rejects a chat request"""
+    db.check_connection()
+    
+    chat_request = db.get_chat_request(request_id)
+    
+    if not chat_request:
+        return jsonify({"error": "Request not found"}), 404
+    
+    # Verify psychologist is the one rejecting
+    request_psychologist_id = db.resolve_user_identifier(chat_request.get("psychologist_id"))
+    if request_psychologist_id not in [db.resolve_user_identifier(current_user_id), db.resolve_user_identifier(current_user_email)]:
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    # Update status to rejected
+    db.update_chat_request_status(request_id, "rejected")
+    
+    return jsonify({
+        "success": True,
+        "message": "Chat request rejected"
+    })
+
+@app.route('/api/chat-request/<request_id>/cancel', methods=['POST'])
+@token_required
+def cancel_chat_request(current_user_id, current_user_email, request_id):
+    """User cancels a chat request"""
+    db.check_connection()
+    
+    chat_request = db.get_chat_request(request_id)
+    
+    if not chat_request:
+        return jsonify({"error": "Request not found"}), 404
+    
+    # Verify user is the one cancelling
+    request_user_id = db.resolve_user_identifier(chat_request.get("user_id"))
+    if request_user_id not in [db.resolve_user_identifier(current_user_id), db.resolve_user_identifier(current_user_email)]:
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    # Update status to cancelled
+    db.update_chat_request_status(request_id, "cancelled")
+    
+    return jsonify({
+        "success": True,
+        "message": "Chat request cancelled"
+    })
+
+@app.route('/api/psychologist/<psychologist_id>/pending-requests', methods=['GET'])
+@token_required
+def get_pending_requests(current_user_id, current_user_email, psychologist_id):
+    """Get pending chat requests for a psychologist"""
+    db.check_connection()
+    
+    print(f"DEBUG PENDING: current_user_id={current_user_id}, current_user_email={current_user_email}, psychologist_id={psychologist_id}")
+    
+    # Verify psychologist is requesting their own requests
+    requested_id = db.resolve_user_identifier(psychologist_id)
+    current_id = db.resolve_user_identifier(current_user_id)
+    current_email = db.resolve_user_identifier(current_user_email)
+    if requested_id not in [current_id, current_email]:
+        print(f"DEBUG PENDING: Unauthorized - {psychologist_id} != {current_user_id} and != {current_user_email}")
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    requests = db.get_pending_requests(requested_id)
+    print(f"DEBUG PENDING: Found {len(requests)} pending requests for {psychologist_id}")
+    
+    return jsonify({"requests": requests})
 
 if __name__ == '__main__':
     # Initialize DB Schema once at startup

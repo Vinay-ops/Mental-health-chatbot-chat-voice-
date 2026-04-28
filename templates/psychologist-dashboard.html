@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychologist Dashboard - Mental Health Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #5a32a3;
+            --light-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 30px 20px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar-brand i {
+            font-size: 1.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .sidebar-menu i {
+            font-size: 1.2rem;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .btn-logout {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-badge i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .badge-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Pending Requests Section */
+        .requests-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .request-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .request-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .request-info {
+            flex: 1;
+        }
+
+        .request-user {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .request-message {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .request-time {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-accept,
+        .btn-reject {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-accept {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-accept:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-reject {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-reject:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .no-requests {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .no-requests i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .no-requests h3 {
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .no-requests p {
+            color: #999;
+        }
+
+        /* Clients Section */
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .client-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .client-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .client-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .client-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 1.8rem;
+            color: white;
+        }
+
+        .client-name {
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .client-email {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .client-body {
+            padding: 15px;
+        }
+
+        .client-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+        }
+
+        .btn-open-chat {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-open-chat:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .empty-state {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+
+        .chat-panel {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .chat-panel-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chat-panel-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .chat-panel-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .chat-close {
+            background: rgba(255, 255, 255, 0.18);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .chat-messages {
+            height: 420px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 11px 14px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.received .message-content {
+            background: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.sent .message-content {
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        .chat-input-area {
+            border-top: 1px solid var(--border-color);
+            padding: 16px;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 1rem;
+        }
+
+        .chat-input-area input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+        }
+
+        .chat-input-area button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .chat-input-area button:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                padding: 20px 10px;
+            }
+
+            .sidebar-brand,
+            .sidebar-menu a span {
+                display: none;
+            }
+
+            .sidebar-menu a {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .clients-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .request-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .request-actions {
+                width: 100%;
+                margin-top: 15px;
+            }
+
+            .btn-accept,
+            .btn-reject {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <i class="bi bi-heart-pulse"></i>
+                <span>PsychoCare</span>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a class="nav-link active" onclick="showTab('requests', this)">
+                        <i class="bi bi-inbox"></i>
+                        <span>Pending Requests</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" onclick="showTab('clients', this)">
+                        <i class="bi bi-people"></i>
+                        <span>My Clients</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" id="messagesNavLink" onclick="showTab('messages', this)">
+                        <i class="bi bi-chat-dots"></i>
+                        <span>Messages</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" onclick="showTab('settings', this)">
+                        <i class="bi bi-gear"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" id="psychologistName">Loading...</div>
+                        <div class="user-role">Psychologist</div>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1 class="header-title">Dashboard</h1>
+                <div class="header-actions">
+                    <div class="notification-badge" id="notificationBadge">
+                        <i class="bi bi-bell"></i>
+                        <span class="badge-count" id="notificationCount" style="display: none;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Pending Requests Tab -->
+                <div id="requestsTab" class="tab-content active">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px; font-weight: 700;">
+                        <i class="bi bi-inbox"></i> Pending Chat Requests
+                    </h3>
+                    <div id="requestsList" class="requests-list"></div>
+                </div>
+
+                <!-- Clients Tab -->
+                <div id="clientsTab" class="tab-content">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px; font-weight: 700;">
+                        <i class="bi bi-people"></i> My Clients
+                    </h3>
+                    <div id="clientsList" class="clients-grid"></div>
+                </div>
+
+                <!-- Messages Tab -->
+                <div id="messagesTab" class="tab-content">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px; font-weight: 700;">
+                        <i class="bi bi-chat-dots"></i> Messages
+                    </h3>
+                    <div id="messagesEmptyState" style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+                        <i class="bi bi-chat-dots" style="font-size: 3rem; color: var(--primary-color); opacity: 0.3; display: block; margin-bottom: 20px;"></i>
+                        <h4 style="color: #666;">Direct Messages</h4>
+                        <p style="color: #999;">Select a client from "My Clients" to start a conversation.</p>
+                    </div>
+                    <div id="chatPanel" class="chat-panel" style="display: none;">
+                        <div class="chat-panel-header">
+                            <div>
+                                <div class="chat-panel-title" id="chatClientName">Client</div>
+                                <div class="chat-panel-subtitle" id="chatClientEmail">Direct message</div>
+                            </div>
+                            <button class="chat-close" onclick="closeChat()">
+                                <i class="bi bi-x-circle"></i> Close
+                            </button>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="empty-state" style="box-shadow: none; padding: 40px;">
+                                <i class="bi bi-chat-left"></i>
+                                <p>No messages yet.</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+                            <button onclick="sendMessage()">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settingsTab" class="tab-content">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px; font-weight: 700;">
+                        <i class="bi bi-gear"></i> Settings
+                    </h3>
+                    <div style="background: white; padding: 40px; border-radius: 12px;">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">Availability Status</label>
+                            <select id="statusSelect" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                                <option value="available">Available</option>
+                                <option value="busy">Busy</option>
+                                <option value="offline">Offline</option>
+                            </select>
+                        </div>
+                        <button class="btn-accept" onclick="saveSettings()" style="width: 100%; margin-top: 20px;">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Use the same origin as current page (no CORS issues)
+        const backendBase = window.location.origin;
+        let currentUserId = null;
+        let currentUserEmail = null;
+        let token = null;
+        let pendingRequestsInterval = null;
+        let currentChatUser = null;
+        let messagePollingInterval = null;
+        let loadedClients = [];
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('You must be logged in');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Decode user ID and name
+            try {
+                const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                currentUserId = tokenPayload.sub;
+                currentUserEmail = tokenPayload.email || tokenPayload.sub;
+                const userName = localStorage.getItem('userName');
+                document.getElementById('psychologistName').textContent = userName || 'Psychologist';
+            } catch (e) {
+                console.error('Error decoding token:', e);
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Load data
+            loadPendingRequests();
+            loadClients();
+
+            // Poll for new requests every 5 seconds
+            pendingRequestsInterval = setInterval(loadPendingRequests, 5000);
+        });
+
+        // Show tab
+        function showTab(tabName, element) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all nav links
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            element.classList.add('active');
+
+            // Update header
+            const titles = {
+                'requests': 'Pending Requests',
+                'clients': 'My Clients',
+                'messages': 'Messages',
+                'settings': 'Settings'
+            };
+            document.querySelector('.header-title').textContent = titles[tabName] || 'Dashboard';
+        }
+
+        // Load pending requests
+        async function loadPendingRequests() {
+            try {
+                const response = await fetch(`${backendBase}/api/psychologist/${encodeURIComponent(currentUserEmail || currentUserId)}/pending-requests`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load requests');
+
+                const data = await response.json();
+                const requests = data.requests || [];
+
+                // Update notification count
+                const badge = document.getElementById('notificationCount');
+                if (requests.length > 0) {
+                    badge.textContent = requests.length;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                // Display requests
+                displayRequests(requests);
+            } catch (error) {
+                console.error('Error loading pending requests:', error);
+            }
+        }
+
+        // Display pending requests
+        function displayRequests(requests) {
+            const container = document.getElementById('requestsList');
+
+            if (!requests || requests.length === 0) {
+                container.innerHTML = `
+                    <div class="no-requests">
+                        <i class="bi bi-inbox"></i>
+                        <h3>No Pending Requests</h3>
+                        <p>You'll see chat requests from users here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = requests.map(req => {
+                const time = new Date(req.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div class="request-card">
+                        <div class="request-info">
+                            <div class="request-user">Chat Request from User</div>
+                            <div class="request-message">${req.message ? escapeHtml(req.message) : 'No message'}</div>
+                            <div class="request-time">Received at ${time}</div>
+                        </div>
+                        <div class="request-actions">
+                            <button class="btn-accept" onclick="acceptRequest('${req.request_id}')">
+                                <i class="bi bi-check-circle"></i> Accept
+                            </button>
+                            <button class="btn-reject" onclick="rejectRequest('${req.request_id}')">
+                                <i class="bi bi-x-circle"></i> Reject
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Accept request
+        async function acceptRequest(requestId) {
+            try {
+                const response = await fetch(`${backendBase}/api/chat-request/${requestId}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to accept request');
+
+                alert('Chat request accepted! User will be notified.');
+                loadPendingRequests();
+                loadClients();
+            } catch (error) {
+                console.error('Error accepting request:', error);
+                alert('Failed to accept request');
+            }
+        }
+
+        // Reject request
+        async function rejectRequest(requestId) {
+            if (!confirm('Are you sure you want to reject this chat request?')) return;
+
+            try {
+                const response = await fetch(`${backendBase}/api/chat-request/${requestId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to reject request');
+
+                alert('Chat request rejected.');
+                loadPendingRequests();
+            } catch (error) {
+                console.error('Error rejecting request:', error);
+                alert('Failed to reject request');
+            }
+        }
+
+        // Load clients
+        async function loadClients() {
+            try {
+                const response = await fetch(`${backendBase}/api/psychologist/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load clients');
+
+                const data = await response.json();
+                displayClients(data.users || []);
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                document.getElementById('clientsList').innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-people"></i>
+                        <h3>No Clients Yet</h3>
+                        <p>Clients will appear here once you accept chat requests.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display clients
+        function displayClients(users) {
+            const container = document.getElementById('clientsList');
+            loadedClients = users || [];
+
+            if (!users || users.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-people"></i>
+                        <h3>No Clients Yet</h3>
+                        <p>Clients will appear here once you accept chat requests.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = users.map((user, index) => `
+                <div class="client-card">
+                    <div class="client-header">
+                        <div class="client-avatar">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="client-name">${escapeHtml(user.name || 'Client')}</div>
+                        <div class="client-email">${escapeHtml(user.email || user.user_id || '')}</div>
+                    </div>
+                    <div class="client-body">
+                        <div class="client-status">
+                            <span class="status-dot"></span>
+                            <span>Active Client</span>
+                        </div>
+                        <button class="btn-open-chat" onclick="openChatByIndex(${index})">
+                            <i class="bi bi-chat-dots"></i> Open Chat
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openChatByIndex(index) {
+            const user = loadedClients[index];
+            if (!user) return;
+            openChat(user.user_id || user.email, user.name || 'Client', user.email || user.user_id);
+        }
+
+        // Open chat with user
+        async function openChat(userId, userName, userEmail) {
+            if (!userId || userId === 'undefined') {
+                alert('Could not open this chat because the client ID is missing.');
+                return;
+            }
+
+            currentChatUser = userId;
+            showTab('messages', document.getElementById('messagesNavLink'));
+
+            document.getElementById('messagesEmptyState').style.display = 'none';
+            document.getElementById('chatPanel').style.display = 'block';
+            document.getElementById('chatClientName').textContent = userName || 'Client';
+            document.getElementById('chatClientEmail').textContent = userEmail || userId;
+            document.getElementById('chatMessages').innerHTML = '<div class="empty-state" style="box-shadow: none; padding: 40px;"><p>Loading messages...</p></div>';
+
+            await loadMessages();
+
+            if (messagePollingInterval) clearInterval(messagePollingInterval);
+            messagePollingInterval = setInterval(loadMessages, 2000);
+            document.getElementById('messageInput').focus();
+        }
+
+        async function loadMessages() {
+            if (!currentChatUser) return;
+
+            try {
+                const response = await fetch(`${backendBase}/api/messages/${encodeURIComponent(currentChatUser)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load messages');
+
+                const data = await response.json();
+                displayMessages(data.messages || []);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('chatMessages').innerHTML = '<div class="empty-state" style="box-shadow: none; padding: 40px;"><p>Error loading messages.</p></div>';
+            }
+        }
+
+        function displayMessages(messages) {
+            const container = document.getElementById('chatMessages');
+
+            if (!messages.length) {
+                container.innerHTML = '<div class="empty-state" style="box-shadow: none; padding: 40px;"><i class="bi bi-chat-left"></i><p>No messages yet. Start the conversation!</p></div>';
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => {
+                const isSent = msg.sender_id === currentUserEmail || msg.sender_id === currentUserId;
+                const createdAt = msg.created_at ? new Date(msg.created_at) : new Date();
+                const time = Number.isNaN(createdAt.getTime())
+                    ? ''
+                    : createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div>
+                            <div class="message-content">${escapeHtml(msg.message || '')}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendMessage() {
+            if (!currentChatUser) return;
+
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            try {
+                const response = await fetch(`${backendBase}/api/messages/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        receiver_id: currentChatUser,
+                        message
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to send message');
+
+                input.value = '';
+                await loadMessages();
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message');
+            }
+        }
+
+        function closeChat() {
+            currentChatUser = null;
+            if (messagePollingInterval) clearInterval(messagePollingInterval);
+            messagePollingInterval = null;
+            document.getElementById('chatPanel').style.display = 'none';
+            document.getElementById('messagesEmptyState').style.display = 'block';
+        }
+
+        // Save settings
+        async function saveSettings() {
+            const status = document.getElementById('statusSelect').value;
+            alert('Settings saved! Your status is now: ' + status);
+            // In a full implementation, this would make an API call to update psychologist status
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userName');
+            window.location.href = '/login';
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

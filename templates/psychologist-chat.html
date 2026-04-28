@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Psychologist - Mental Health Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #5a32a3;
+            --light-bg: #f8f9fa;
+            --border-color: #dee2e6;
+            --received-color: #e8e8e8;
+            --sent-color: #6f42c1;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: white;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-info i {
+            font-size: 1.5rem;
+        }
+
+        .header-text h3 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            display: inline-block;
+            animation: pulse 2s infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .status-text {
+            font-size: 0.9rem;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        .btn-end-chat {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-end-chat:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            text-decoration: none;
+        }
+
+        .waiting-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .waiting-screen.hidden {
+            display: none;
+        }
+
+        .hourglass-animation {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: rotate 2s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            50% {
+                transform: rotate(180deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .waiting-title {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .waiting-text {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .waiting-details {
+            color: #999;
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .messages-area.hidden {
+            display: none;
+        }
+
+        .message {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+            align-items: flex-start;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 70%;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 1rem;
+        }
+
+        .message.received .message-bubble {
+            background: var(--received-color);
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.sent .message-bubble {
+            background: var(--sent-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-area.hidden {
+            display: none;
+        }
+
+        .input-group-custom {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group-custom input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .input-group-custom input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-send:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .rejection-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            background: #fff3cd;
+        }
+
+        .rejection-screen.hidden {
+            display: none;
+        }
+
+        .rejection-icon {
+            font-size: 4rem;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .rejection-title {
+            font-size: 1.5rem;
+            color: #dc3545;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .rejection-text {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+            color: white;
+        }
+
+        .scrollable {
+            overflow-y: auto;
+        }
+
+        /* Scrollbar styling */
+        .messages-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="header-info">
+                <i class="bi bi-chat-dots"></i>
+                <div class="header-text">
+                    <h3>Chat with Psychologist</h3>
+                    <div class="status-text">
+                        <span class="status-indicator"></span> Waiting for psychologist to accept
+                    </div>
+                </div>
+            </div>
+            <button class="btn-end-chat" onclick="endChat()">
+                <i class="bi bi-x-circle"></i> End Chat
+            </button>
+        </div>
+
+        <!-- Waiting Screen -->
+        <div id="waitingScreen" class="waiting-screen">
+            <div class="hourglass-animation">⏳</div>
+            <div class="waiting-title">Waiting for Response</div>
+            <div class="waiting-text">Your chat request has been sent to the psychologist.</div>
+            <div class="waiting-details">
+                They will review your request and respond shortly.<br>
+                You'll be notified once they accept or decline your request.
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="messagesArea" class="messages-area hidden scrollable"></div>
+
+        <!-- Rejection Screen -->
+        <div id="rejectionScreen" class="rejection-screen hidden">
+            <div class="rejection-icon">❌</div>
+            <div class="rejection-title">Request Declined</div>
+            <div class="rejection-text">The psychologist has declined your chat request.</div>
+            <a href="/psychologist-list" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Back to Psychologists
+            </a>
+        </div>
+
+        <!-- Input Area -->
+        <div id="inputArea" class="input-area hidden">
+            <div class="input-group-custom">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Type your message..." 
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button class="btn-send" onclick="sendMessage()">
+                    <i class="bi bi-send"></i> Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Use the same origin as current page (no CORS issues)
+        const backendBase = window.location.origin;
+        let chatRequestId = null;
+        let psychologistId = null;
+        let currentUserId = null;
+        let currentUserEmail = null;
+        let token = null;
+        let chatActive = false;
+        let statusPollingInterval = null;
+        let messagePollingInterval = null;
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('You must be logged in to chat');
+                window.location.href = '/login';
+                return;
+            }
+
+            // Get request ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            chatRequestId = urlParams.get('requestId');
+
+            if (!chatRequestId) {
+                alert('Invalid chat request');
+                window.location.href = '/psychologist-list';
+                return;
+            }
+
+            // Decode user ID from JWT
+            try {
+                const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                currentUserId = tokenPayload.sub;
+                currentUserEmail = tokenPayload.email || tokenPayload.sub;
+            } catch (e) {
+                console.error('Error decoding token:', e);
+                alert('Session expired');
+                window.location.href = '/login';
+                return;
+            }
+
+            // Start polling for request status
+            pollRequestStatus();
+            statusPollingInterval = setInterval(pollRequestStatus, 2000);
+        });
+
+        // Poll for request status
+        async function pollRequestStatus() {
+            try {
+                const response = await fetch(`${backendBase}/api/chat-request/${chatRequestId}/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to get status');
+
+                const data = await response.json();
+                psychologistId = data.psychologist_id;
+
+                if (data.status === 'accepted') {
+                    acceptChat();
+                } else if (data.status === 'rejected') {
+                    rejectChat();
+                }
+            } catch (error) {
+                console.error('Error polling request status:', error);
+            }
+        }
+
+        // Accept chat - show messaging interface
+        function acceptChat() {
+            if (chatActive) return;
+            chatActive = true;
+
+            clearInterval(statusPollingInterval);
+
+            // Hide waiting screen, show messages area
+            document.getElementById('waitingScreen').classList.add('hidden');
+            document.getElementById('messagesArea').classList.remove('hidden');
+            document.getElementById('inputArea').classList.remove('hidden');
+
+            // Update header status
+            document.querySelector('.status-indicator').style.animation = 'none';
+            document.querySelector('.status-indicator').style.backgroundColor = '#28a745';
+            document.querySelector('.status-text').textContent = 'Chat active';
+
+            // Load initial messages
+            loadMessages();
+
+            // Start polling for new messages
+            messagePollingInterval = setInterval(loadMessages, 2000);
+        }
+
+        // Reject chat - show rejection screen
+        function rejectChat() {
+            clearInterval(statusPollingInterval);
+            clearInterval(messagePollingInterval);
+
+            document.getElementById('waitingScreen').classList.add('hidden');
+            document.getElementById('rejectionScreen').classList.remove('hidden');
+            document.getElementById('inputArea').classList.add('hidden');
+            document.querySelector('.btn-end-chat').style.display = 'none';
+        }
+
+        // Load messages
+        async function loadMessages() {
+            if (!chatActive || !psychologistId) return;
+
+            try {
+                const response = await fetch(
+                    `${backendBase}/api/messages/${psychologistId}`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+
+                if (!response.ok) throw new Error('Failed to load messages');
+
+                const data = await response.json();
+                displayMessages(data.messages || []);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        // Display messages
+        function displayMessages(messages) {
+            const messagesArea = document.getElementById('messagesArea');
+            const shouldScroll = messagesArea.scrollTop + messagesArea.clientHeight >= messagesArea.scrollHeight - 10;
+
+            messagesArea.innerHTML = messages.map(msg => {
+                const isReceived = msg.sender_id !== currentUserId && msg.sender_id !== currentUserEmail;
+                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <div class="message ${isReceived ? 'received' : 'sent'}">
+                        <div class="message-content">
+                            <div class="message-bubble">${escapeHtml(msg.message)}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (shouldScroll) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            try {
+                const response = await fetch(`${backendBase}/api/messages/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        receiver_id: psychologistId,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to send message');
+
+                input.value = '';
+                loadMessages();
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message');
+            }
+        }
+
+        // Handle Enter key
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // End chat
+        function endChat() {
+            if (confirm('Are you sure you want to end this chat?')) {
+                clearInterval(statusPollingInterval);
+                clearInterval(messagePollingInterval);
+                window.location.href = '/psychologist-list';
+            }
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

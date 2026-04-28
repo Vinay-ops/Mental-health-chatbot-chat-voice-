@@ -8,6 +8,55 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .role-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .role-option {
+            border: 3px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .role-option:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .role-option.selected {
+            border-color: #667eea;
+            background: #f0e6ff;
+            font-weight: 600;
+        }
+
+        .role-option i {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .role-option.selected i {
+            color: #764ba2;
+        }
+
+        .role-option p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .role-option.selected p {
+            color: #333;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg sticky-top">
@@ -30,7 +79,26 @@
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card p-4">
-                    <h4 class="mb-3">Login</h4>
+                    <h4 class="mb-4">Login</h4>
+
+                    <!-- Role Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-3">Select Your Role</label>
+                        <div class="role-selector">
+                            <div class="role-option selected" onclick="selectRole('user')" id="userRole">
+                                <div><i class="bi bi-person-circle"></i></div>
+                                <strong>User</strong>
+                                <p>Get Support</p>
+                            </div>
+                            <div class="role-option" onclick="selectRole('psychologist')" id="psychologistRole">
+                                <div><i class="bi bi-stethoscope"></i></div>
+                                <strong>Psychologist</strong>
+                                <p>Provide Care</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" class="form-control" id="email" autocomplete="off">
@@ -52,37 +120,68 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const backendBase = 'http://127.0.0.1:8002';
+        let selectedRole = 'user'; // Default role
+        
         const emailEl = document.getElementById('email');
         const passwordEl = document.getElementById('password');
         const submitEl = document.getElementById('submit');
         const errorEl = document.getElementById('error');
+
+        // Role selection handler
+        function selectRole(role) {
+            selectedRole = role;
+            
+            // Update UI
+            document.getElementById('userRole').classList.remove('selected');
+            document.getElementById('psychologistRole').classList.remove('selected');
+            
+            if (role === 'user') {
+                document.getElementById('userRole').classList.add('selected');
+            } else {
+                document.getElementById('psychologistRole').classList.add('selected');
+            }
+        }
+
         async function doLogin() {
             const email = (emailEl.value || '').trim();
             const password = (passwordEl.value || '').trim();
+            
             if (!email || !password) {
                 errorEl.textContent = 'Please fill all fields';
                 errorEl.classList.remove('d-none');
                 return;
             }
+            
             try {
                 const res = await fetch(`${backendBase}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
+                
                 if (!res.ok) throw new Error('Login failed');
                 const data = await res.json();
+                
                 if (data.token) {
                     localStorage.setItem('authToken', data.token);
-                    window.location.href = 'chat.html';
+                    localStorage.setItem('userType', data.user_type || 'user');
+                    localStorage.setItem('userName', data.name);
+                    
+                    // Redirect based on actual user type from server
+                    if (data.user_type === 'psychologist') {
+                        window.location.href = 'psychologist-dashboard.html';
+                    } else {
+                        window.location.href = 'chat.html';
+                    }
                 } else {
                     throw new Error('No token');
                 }
             } catch (e) {
-                localStorage.setItem('authToken', 'guest');
-                window.location.href = 'chat.html';
+                errorEl.textContent = e.message || 'Login failed. Please try again.';
+                errorEl.classList.remove('d-none');
             }
         }
+        
         submitEl.addEventListener('click', doLogin);
         passwordEl.addEventListener('keypress', (e) => { if (e.key === 'Enter') doLogin(); });
     </script>

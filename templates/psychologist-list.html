@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Psychologists - Mental Health Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #5a32a3;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-brand i {
+            margin-right: 8px;
+        }
+
+        .nav-link {
+            color: #333 !important;
+            margin: 0 8px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+
+        .header-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 0;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .container-main {
+            max-width: 1200px;
+        }
+
+        .psychologist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        .psychologist-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+        }
+
+        .psychologist-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .psychologist-name {
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .specialization {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .bio {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .rating-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .star {
+            color: #ffc107;
+        }
+
+        .experience {
+            color: #999;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .btn-start-chat {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start-chat:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .no-psychologists {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-psychologists i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .no-psychologists h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .no-psychologists p {
+            color: #666;
+        }
+
+        .chat-request-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-request-modal.show {
+            display: flex;
+        }
+
+        .modal-content-custom {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header-custom h2 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .form-group-custom {
+            margin-bottom: 20px;
+        }
+
+        .form-group-custom label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group-custom textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group-custom textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            background: white;
+            color: #333;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: var(--light-bg);
+        }
+
+        .btn-send-request {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-send-request:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+        }
+
+        .btn-send-request:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-section input {
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        .filter-section input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="bi bi-heart-pulse"></i>Mental Health Chatbot</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/chat"><i class="bi bi-chat-dots"></i>Chat</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/templates/community.html"><i class="bi bi-people"></i>Community</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i>Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="container">
+            <h1 class="header-title"><i class="bi bi-person-check"></i> Find a Psychologist</h1>
+            <p class="header-subtitle">Connect with professional mental health experts</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container container-main">
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="form-group-custom">
+                <label for="searchInput"><i class="bi bi-search"></i> Search by Name or Specialization</label>
+                <input type="text" id="searchInput" placeholder="Enter psychologist name or specialization..." oninput="filterPsychologists()">
+            </div>
+        </div>
+
+        <!-- Psychologists Grid -->
+        <div id="psychologistsList" class="psychologist-grid"></div>
+
+        <!-- No Psychologists Message -->
+        <div id="noPsychologists" class="no-psychologists" style="display: none;">
+            <i class="bi bi-inbox"></i>
+            <h3>No Psychologists Available</h3>
+            <p>Please check back later or contact support for assistance.</p>
+        </div>
+    </div>
+
+    <!-- Chat Request Modal -->
+    <div id="chatRequestModal" class="chat-request-modal">
+        <div class="modal-content-custom">
+            <div class="modal-header-custom">
+                <h2>Start Chat Request</h2>
+                <button class="modal-close" onclick="closeChatRequestModal()">&times;</button>
+            </div>
+            <form id="chatRequestForm" onsubmit="submitChatRequest(event)">
+                <div class="form-group-custom">
+                    <label>Psychologist</label>
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 8px; color: var(--primary-color); font-weight: 600;" id="selectedPsychologistName"></div>
+                </div>
+                <div class="form-group-custom">
+                    <label for="messageInput">Message (Optional)</label>
+                    <textarea id="messageInput" placeholder="Tell the psychologist about your concern or reason for reaching out..."></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeChatRequestModal()">Cancel</button>
+                    <button type="submit" class="btn-send-request" id="sendRequestBtn">
+                        <span id="sendRequestText">Send Request</span>
+                        <span id="sendRequestSpinner" class="loading" style="display: none; margin-left: 8px;"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Use the same origin as current page (no CORS issues)
+        const backendBase = window.location.origin;
+        let allPsychologists = [];
+        let selectedPsychologist = null;
+
+        // Get auth token
+        function getAuthToken() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('You must be logged in to view psychologists');
+                window.location.href = '/login';
+                return null;
+            }
+            return token;
+        }
+
+        // Load psychologists on page load
+        window.addEventListener('load', () => {
+            const token = getAuthToken();
+            if (token) {
+                loadPsychologists();
+                // Refresh every 30 seconds
+                setInterval(loadPsychologists, 30000);
+            }
+        });
+
+        // Load available psychologists
+        async function loadPsychologists() {
+            try {
+                const token = getAuthToken();
+                console.log('DEBUG: Token retrieved:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+                if (!token) return;
+
+                console.log('DEBUG: Calling API with token...');
+                const response = await fetch(`${backendBase}/api/psychologists/available`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('DEBUG: Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load psychologists: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('DEBUG: API Response data:', data);
+                allPsychologists = data.psychologists || [];
+                console.log('DEBUG: Psychologists loaded:', allPsychologists.length);
+                displayPsychologists(allPsychologists);
+            } catch (error) {
+                console.error('Error loading psychologists:', error);
+                document.getElementById('psychologistsList').innerHTML = '';
+                document.getElementById('noPsychologists').style.display = 'block';
+            }
+        }
+
+        // Display psychologists in grid
+        function displayPsychologists(psychologists) {
+            const container = document.getElementById('psychologistsList');
+            
+            if (!psychologists || psychologists.length === 0) {
+                container.innerHTML = '';
+                document.getElementById('noPsychologists').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('noPsychologists').style.display = 'none';
+            container.innerHTML = psychologists.map(psych => `
+                <div class="psychologist-card">
+                    <div class="card-header">
+                        <div class="status-badge">
+                            <span class="dot"></span>
+                            <span>${psych.status}</span>
+                        </div>
+                        <div class="avatar">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <div class="psychologist-name">${psych.name}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="specialization">${psych.specialization}</div>
+                        <div class="bio">${psych.bio}</div>
+                        <div class="rating-section">
+                            <div class="rating">
+                                <i class="bi bi-star-fill star"></i>
+                                <span>${psych.rating}</span>
+                            </div>
+                            <div class="experience">${psych.experience} yrs exp</div>
+                        </div>
+                        <button class="btn-start-chat" onclick="openChatRequestModal('${psych.id}', '${psych.name}')">
+                            <i class="bi bi-chat-dots"></i> Start Chat
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter psychologists
+        function filterPsychologists() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allPsychologists.filter(psych =>
+                psych.name.toLowerCase().includes(searchTerm) ||
+                psych.specialization.toLowerCase().includes(searchTerm)
+            );
+            displayPsychologists(filtered);
+        }
+
+        // Open chat request modal
+        function openChatRequestModal(psychologistId, psychologistName) {
+            selectedPsychologist = {
+                id: psychologistId,
+                name: psychologistName
+            };
+            document.getElementById('selectedPsychologistName').textContent = psychologistName;
+            document.getElementById('messageInput').value = '';
+            document.getElementById('chatRequestModal').classList.add('show');
+        }
+
+        // Close chat request modal
+        function closeChatRequestModal() {
+            document.getElementById('chatRequestModal').classList.remove('show');
+            selectedPsychologist = null;
+        }
+
+        // Submit chat request
+        async function submitChatRequest(event) {
+            event.preventDefault();
+
+            if (!selectedPsychologist) {
+                alert('No psychologist selected');
+                return;
+            }
+
+            const message = document.getElementById('messageInput').value;
+            const sendRequestBtn = document.getElementById('sendRequestBtn');
+            const sendRequestText = document.getElementById('sendRequestText');
+            const sendRequestSpinner = document.getElementById('sendRequestSpinner');
+
+            try {
+                sendRequestBtn.disabled = true;
+                sendRequestText.style.display = 'none';
+                sendRequestSpinner.style.display = 'inline-block';
+
+                const token = getAuthToken();
+                if (!token) return;
+
+                const response = await fetch(`${backendBase}/api/chat-request/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        psychologist_id: selectedPsychologist.id,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to send request: ${response.status}`);
+                }
+
+                const data = await response.json();
+                closeChatRequestModal();
+                
+                // Redirect to chat with the request ID
+                window.location.href = `/psychologist-chat?requestId=${data.request_id}`;
+            } catch (error) {
+                console.error('Error sending chat request:', error);
+                alert('Failed to send chat request. Please try again.');
+                sendRequestBtn.disabled = false;
+                sendRequestText.style.display = 'inline';
+                sendRequestSpinner.style.display = 'none';
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userName');
+            window.location.href = '/login';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('chatRequestModal').addEventListener('click', (e) => {
+            if (e.target.id === 'chatRequestModal') {
+                closeChatRequestModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -19,6 +19,29 @@
                     </div>
                     <form id="loginForm">
                         <div class="mb-4">
+                            <label class="form-label small fw-bold text-uppercase text-muted">Login As</label>
+                            <div class="role-selector d-flex gap-3 mb-3">
+                                <div class="form-check flex-fill">
+                                    <input class="form-check-input" type="radio" name="userRole" id="userRole" value="user" checked>
+                                    <label class="form-check-label w-100" for="userRole">
+                                        <div style="padding: 12px; border: 2px solid #6f42c1; border-radius: 8px; text-align: center; cursor: pointer;">
+                                            <i class="bi bi-person" style="font-size: 1.5rem; color: #6f42c1;"></i>
+                                            <div style="font-size: 0.9rem; color: #333; font-weight: 600; margin-top: 5px;">User</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="form-check flex-fill">
+                                    <input class="form-check-input" type="radio" name="userRole" id="psychologistRole" value="psychologist">
+                                    <label class="form-check-label w-100" for="psychologistRole">
+                                        <div style="padding: 12px; border: 2px solid #ccc; border-radius: 8px; text-align: center; cursor: pointer;">
+                                            <i class="bi bi-person-check" style="font-size: 1.5rem; color: #999;"></i>
+                                            <div style="font-size: 0.9rem; color: #666; font-weight: 600; margin-top: 5px;">Psychologist</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
                             <label for="email" class="form-label small fw-bold text-uppercase text-muted" data-t="login_email">Email Address</label>
                             <input type="email" class="form-control" id="email" placeholder="name@example.com" data-t="login_email" required>
                         </div>
@@ -40,30 +63,62 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    try {
-        const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+    // Handle role selection UI
+    document.querySelectorAll('input[name="userRole"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.form-check-label').forEach(label => {
+                const div = label.querySelector('div');
+                if (this.checked && label.htmlFor === this.id) {
+                    div.style.borderColor = '#6f42c1';
+                    div.style.backgroundColor = '#f3f0ff';
+                    div.querySelector('i').style.color = '#6f42c1';
+                    div.querySelector('div:last-child').style.color = '#333';
+                } else {
+                    div.style.borderColor = '#ccc';
+                    div.style.backgroundColor = '#fff';
+                    div.querySelector('i').style.color = '#999';
+                    div.querySelector('div:last-child').style.color = '#666';
+                }
+            });
         });
-        const data = await res.json();
-        if (res.ok) {
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('userName', data.name);
-            alert('Welcome back');
-            window.location.href = '/chat';
-        } else {
-            alert(data.error || 'Login failed');
+    });
+
+    // Trigger initial styling
+    document.getElementById('userRole').dispatchEvent(new Event('change'));
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const selectedRole = document.querySelector('input[name="userRole"]:checked').value;
+        
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('userType', data.user_type || selectedRole);
+                alert('Welcome back');
+                
+                // Route based on user type
+                const userType = data.user_type || selectedRole;
+                if (userType === 'psychologist') {
+                    window.location.href = '/psychologist-dashboard';
+                } else {
+                    window.location.href = '/chat';
+                }
+            } else {
+                alert(data.error || 'Login failed');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Something went wrong. Please try again.');
         }
-    } catch (err) {
-        console.error(err);
-        alert('Something went wrong. Please try again.');
-    }
-});
+    });
 </script>
 {% endblock %}
