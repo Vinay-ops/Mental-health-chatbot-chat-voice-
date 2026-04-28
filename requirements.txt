@@ -4,7 +4,7 @@ requests==2.31.0
 python-dotenv==1.0.0
 google-genai
 passlib[bcrypt]==1.7.4
-PyJWT==2.8.0
+PyJWT[crypto]==2.10.1
 psycopg2-binary==2.9.9
 flask-bcrypt==1.0.1
 python-socketio==5.9.0
