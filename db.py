@@ -488,67 +488,17 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
         return []
 
 def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: int = 100):
-    """
-    Get direct messages for a viewer and another user.
-    If the viewer is a psychologist, prefer the psychologist id from the accepted
-    relationship/request so stale tokens or mixed ids do not hide the chat.
-    """
+    """Get direct messages for a viewer and another user."""
     viewer_canonical = resolve_user_identifier(viewer_id)
     other_canonical = resolve_user_identifier(other_user_id)
 
-    print(f"DEBUG GET_MSGS_VIEWER: viewer_id={viewer_id} -> {viewer_canonical}, other_id={other_user_id} -> {other_canonical}, limit={limit}")
+    print(f"DEBUG GET_MSGS_VIEWER: viewer_id={viewer_id} -> {viewer_canonical}, other_id={other_user_id} -> {other_canonical}")
 
-    # First try the direct message table
     messages = get_direct_messages(viewer_canonical, other_canonical, limit)
     if messages:
-        print(f"DEBUG GET_MSGS_VIEWER: found {len(messages)} direct messages between {viewer_canonical} and {other_canonical}")
-        return messages
-    print(f"DEBUG GET_MSGS_VIEWER: no direct messages found for {viewer_canonical} <-> {other_canonical}")
-
-    # Fallback: check accepted chat_requests for an initial message
-    conn = get_db_connection()
-    if not conn:
-        print("DEBUG GET_MSGS_VIEWER: no DB connection for fallback lookup")
-        return messages
-
-    try:
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        other_aliases = get_user_identifier_aliases(other_canonical)
-        viewer_aliases = get_user_identifier_aliases(viewer_canonical)
-        print(f"DEBUG GET_MSGS_VIEWER: other_aliases={other_aliases}, viewer_aliases={viewer_aliases}")
-        cursor.execute("""
-            SELECT request_id, user_id, psychologist_id, message, status, created_at, updated_at
-            FROM chat_requests
-            WHERE status = 'accepted'
-              AND user_id = ANY(%s)
-              AND psychologist_id = ANY(%s)
-            ORDER BY updated_at DESC
-            LIMIT 1
-        """, (other_aliases, viewer_aliases))
-        row = cursor.fetchone()
-        print(f"DEBUG GET_MSGS_VIEWER: chat_request row={row}")
-        cursor.close()
-        conn.close()
-        if row and row.get("message"):
-            initial_message = str(row.get("message") or "").strip()
-            if initial_message:
-                print(f"DEBUG GET_MSGS_VIEWER: returning initial request message for request_id={row.get('request_id')}")
-                return [{
-                    "id": f"request-{row.get('request_id')}",
-                    "sender_id": row.get("user_id") or other_canonical,
-                    "receiver_id": row.get("psychologist_id") or viewer_canonical,
-                    "message": initial_message,
-                    "is_read": False,
-                    "created_at": row.get("updated_at") or row.get("created_at")
-                }]
-    except Exception as e:
-        print(f"ERROR: Error resolving chat fallback: {e}")
-        try:
-            conn.close()
-        except:
-            pass
-
-    print(f"DEBUG GET_MSGS_VIEWER: fallback found nothing; returning empty list")
+        print(f"DEBUG GET_MSGS_VIEWER: found {len(messages)} messages")
+    else:
+        print(f"DEBUG GET_MSGS_VIEWER: no messages found")
     return messages
 
 # ===== Chat Request functions =====
