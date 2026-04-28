@@ -46,6 +46,42 @@ def resolve_user_identifier(identifier: str):
     
     return normalized.lower()
 
+def get_user_identifier_aliases(identifier: str):
+    """Return email/id aliases for a user so old mixed-format rows still match."""
+    normalized = _normalize_identifier(identifier)
+    if not normalized:
+        return []
+
+    aliases = {normalized.lower()}
+    canonical = resolve_user_identifier(normalized)
+    if canonical:
+        aliases.add(canonical.lower())
+
+    conn = supabase_client.get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                "SELECT id, email FROM users WHERE LOWER(email) = LOWER(%s) OR id::text = %s",
+                (canonical or normalized, normalized)
+            )
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if row:
+                if row.get("id") is not None:
+                    aliases.add(str(row.get("id")))
+                if row.get("email"):
+                    aliases.add(str(row.get("email")).lower())
+        except Exception as e:
+            print(f"ERROR: Error getting identifier aliases: {e}")
+            try:
+                conn.close()
+            except:
+                pass
+
+    return list(aliases)
+
 def get_db_connection():
     """Get database connection using Supabase client"""
     return supabase_client.get_db_connection()
@@ -304,6 +340,7 @@ def get_psychologist_users(psychologist_id: str):
 def get_accepted_chat_users(psychologist_id: str):
     """Get users who have accepted chat requests with this psychologist"""
     psychologist_id = resolve_user_identifier(psychologist_id)
+    psychologist_aliases = get_user_identifier_aliases(psychologist_id)
     """Get accepted chat users from Supabase"""
     conn = get_db_connection()
     if not conn:
@@ -315,18 +352,35 @@ def get_accepted_chat_users(psychologist_id: str):
     
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
+        # Get explicit psychologist-user links.
+        cursor.execute("""
+            SELECT DISTINCT pu.user_id, u.name, COALESCE(u.email, pu.user_id) AS email, pu.created_at as connected_at
+            FROM psychologist_users pu
+            LEFT JOIN users u ON pu.user_id = u.email OR pu.user_id = u.id::text
+            WHERE pu.psychologist_id = ANY(%s) AND pu.status = 'active'
+            ORDER BY pu.created_at DESC
+        """, (psychologist_aliases,))
+        linked_users = cursor.fetchall()
+        for user in linked_users:
+            user_id = user.get("email") or user.get("user_id")
+            if user_id and user_id not in user_ids_seen:
+                user["user_id"] = user_id
+                user_ids_seen.add(user_id)
+                users.append(user)
+
         # Get from chat_requests
         cursor.execute("""
             SELECT DISTINCT cr.user_id, u.name, u.email, cr.updated_at as connected_at
             FROM chat_requests cr
-            LEFT JOIN users u ON cr.user_id = u.email
-            WHERE cr.psychologist_id = %s AND cr.status = 'accepted'
+            LEFT JOIN users u ON cr.user_id = u.email OR cr.user_id = u.id::text
+            WHERE cr.psychologist_id = ANY(%s) AND cr.status = 'accepted'
             ORDER BY cr.updated_at DESC
-        """, (psychologist_id,))
+        """, (psychologist_aliases,))
         chat_users = cursor.fetchall()
         for user in chat_users:
-            user_id = user.get("user_id")
+            user_id = user.get("email") or user.get("user_id")
             if user_id and user_id not in user_ids_seen:
+                user["user_id"] = user_id
                 user_ids_seen.add(user_id)
                 users.append(user)
         
@@ -334,28 +388,39 @@ def get_accepted_chat_users(psychologist_id: str):
         cursor.execute("""
             SELECT DISTINCT
                 CASE
-                    WHEN dm.sender_id = %s THEN dm.receiver_id
+                    WHEN dm.sender_id = ANY(%s) THEN dm.receiver_id
                     ELSE dm.sender_id
                 END AS user_id,
                 u.name,
-                CASE
-                    WHEN dm.sender_id = %s THEN dm.receiver_id
+                COALESCE(u.email, CASE
+                    WHEN dm.sender_id = ANY(%s) THEN dm.receiver_id
                     ELSE dm.sender_id
-                END AS email,
+                END) AS email,
                 MAX(dm.created_at) AS connected_at
             FROM direct_messages dm
             LEFT JOIN users u ON u.email = CASE
-                WHEN dm.sender_id = %s THEN dm.receiver_id
+                WHEN dm.sender_id = ANY(%s) THEN dm.receiver_id
+                ELSE dm.sender_id
+            END OR u.id::text = CASE
+                WHEN dm.sender_id = ANY(%s) THEN dm.receiver_id
                 ELSE dm.sender_id
             END
-            WHERE dm.sender_id = %s OR dm.receiver_id = %s
+            WHERE dm.sender_id = ANY(%s) OR dm.receiver_id = ANY(%s)
             GROUP BY user_id, u.name, email
             ORDER BY connected_at DESC
-        """, (psychologist_id, psychologist_id, psychologist_id, psychologist_id, psychologist_id))
+        """, (
+            psychologist_aliases,
+            psychologist_aliases,
+            psychologist_aliases,
+            psychologist_aliases,
+            psychologist_aliases,
+            psychologist_aliases,
+        ))
         direct_users = cursor.fetchall()
         for user in direct_users:
-            user_id = user.get("user_id")
+            user_id = user.get("email") or user.get("user_id")
             if user_id and user_id not in user_ids_seen:
+                user["user_id"] = user_id
                 user_ids_seen.add(user_id)
                 users.append(user)
         
@@ -380,10 +445,35 @@ def save_direct_message(sender_id: str, receiver_id: str, message: str):
 
 def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
     """Get direct messages between two users"""
-    user1_id = resolve_user_identifier(user1_id)
-    user2_id = resolve_user_identifier(user2_id)
-    """Get direct messages using Supabase client"""
-    return supabase_client.get_direct_messages(user1_id, user2_id, limit)
+    user1_aliases = get_user_identifier_aliases(user1_id)
+    user2_aliases = get_user_identifier_aliases(user2_id)
+
+    conn = get_db_connection()
+    if not conn:
+        print("ERROR: Cannot get messages - no Supabase connection")
+        return []
+
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("""
+            SELECT id, sender_id, receiver_id, message, is_read, created_at
+            FROM direct_messages
+            WHERE (sender_id = ANY(%s) AND receiver_id = ANY(%s))
+               OR (sender_id = ANY(%s) AND receiver_id = ANY(%s))
+            ORDER BY created_at ASC
+            LIMIT %s
+        """, (user1_aliases, user2_aliases, user2_aliases, user1_aliases, limit))
+        messages = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return messages
+    except Exception as e:
+        print(f"ERROR: Error getting messages: {e}")
+        try:
+            conn.close()
+        except:
+            pass
+        return []
 
 # ===== Chat Request functions =====
 
