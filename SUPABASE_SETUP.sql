@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255),
     user_type VARCHAR(50) DEFAULT 'user',
+    availability_status VARCHAR(50) DEFAULT 'available',
     specialization VARCHAR(255),
     license_number VARCHAR(255),
     bio TEXT,
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type VARCHAR(50) DEFAULT 'user';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS availability_status VARCHAR(50) DEFAULT 'available';
 
 CREATE TABLE IF NOT EXISTS psychologist_users (
     id SERIAL PRIMARY KEY,
@@ -91,6 +93,13 @@ ON direct_messages (sender_id, receiver_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_psychologist_users
 ON psychologist_users (psychologist_id, status);
 
+-- Backfill psychologist-user relationships from already accepted chat requests
+INSERT INTO psychologist_users (psychologist_id, user_id, status, created_at)
+SELECT psychologist_id, user_id, 'active', updated_at
+FROM chat_requests
+WHERE status = 'accepted'
+ON CONFLICT (psychologist_id, user_id) DO NOTHING;
+
 CREATE INDEX IF NOT EXISTS idx_messages_by_sender
 ON direct_messages (sender_id, created_at DESC);
 
@@ -114,8 +123,8 @@ SELECT
     pu.status,
     pu.created_at
 FROM psychologist_users pu
-LEFT JOIN users p ON pu.psychologist_id = p.id
-LEFT JOIN users u ON pu.user_id = u.id;
+LEFT JOIN users p ON pu.psychologist_id = p.email
+LEFT JOIN users u ON pu.user_id = u.email;
 
 -- ============================================
 -- OPTIONAL: Statistics functions

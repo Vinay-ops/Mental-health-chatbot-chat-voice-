@@ -242,7 +242,13 @@ def like_community_post(post_id: int):
 
 def connect_psychologist_to_user(psychologist_id: str, user_id: str):
     """Connect a psychologist to a user for direct messaging"""
-    """Connect a psychologist to a user to Supabase"""
+    psychologist_id = resolve_user_identifier(psychologist_id)
+    user_id = resolve_user_identifier(user_id)
+
+    if not psychologist_id or not user_id:
+        print("ERROR: Cannot connect - missing psychologist_id or user_id")
+        return False
+
     conn = get_db_connection()
     if not conn:
         print("ERROR: Cannot connect - no Supabase connection")
@@ -268,7 +274,7 @@ def connect_psychologist_to_user(psychologist_id: str, user_id: str):
 
 def get_psychologist_users(psychologist_id: str):
     """Get all users assigned to a psychologist"""
-    """Get psychologist users from Supabase"""
+    psychologist_id = resolve_user_identifier(psychologist_id)
     conn = get_db_connection()
     if not conn:
         print("ERROR: Cannot get users - no Supabase connection")
@@ -279,7 +285,7 @@ def get_psychologist_users(psychologist_id: str):
         cursor.execute("""
             SELECT pu.user_id, u.name, u.email, pu.created_at as connected_at
             FROM psychologist_users pu
-            LEFT JOIN users u ON pu.user_id = u.id
+            LEFT JOIN users u ON pu.user_id = u.email
             WHERE pu.psychologist_id = %s AND pu.status = 'active'
             ORDER BY pu.created_at DESC
         """, (psychologist_id,))
@@ -449,7 +455,39 @@ def get_available_psychologists(exclude_user_email=None):
             "bio": psych.get("bio", "Professional mental health expert"),
             "rating": "4.8",
             "experience": "5",
-            "status": "available"
+            "status": psych.get("availability_status") or "available"
         })
     
     return result
+
+def update_psychologist_status(psychologist_id: str, status: str):
+    """Update a psychologist's availability status."""
+    psychologist_id = resolve_user_identifier(psychologist_id)
+    if status not in {"available", "busy", "offline"}:
+        print(f"ERROR: Invalid psychologist status: {status}")
+        return False
+
+    conn = get_db_connection()
+    if not conn:
+        print("ERROR: Cannot update psychologist status - no Supabase connection")
+        return False
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE users
+            SET availability_status = %s, updated_at = %s
+            WHERE LOWER(email) = LOWER(%s) AND user_type = 'psychologist'
+        """, (status, datetime.utcnow(), psychologist_id))
+        updated = cursor.rowcount > 0
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return updated
+    except Exception as e:
+        print(f"ERROR: Error updating psychologist status: {e}")
+        try:
+            conn.close()
+        except:
+            pass
+        return False

@@ -1104,6 +1104,29 @@ def connect_psychologist(current_user_id, current_user_email):
     else:
         return jsonify({"error": "Failed to connect"}), 500
 
+@app.route('/api/psychologist/status', methods=['GET', 'POST'])
+@token_required
+def psychologist_status(current_user_id, current_user_email):
+    """Get or update psychologist availability."""
+    db.check_connection()
+
+    user = db.get_user_by_email(current_user_email)
+    if not user or user.get("user_type") != "psychologist":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if request.method == 'GET':
+        return jsonify({"status": user.get("availability_status") or "available"})
+
+    data = request.json or {}
+    status = data.get("status")
+    if status not in {"available", "busy", "offline"}:
+        return jsonify({"error": "Invalid status"}), 400
+
+    if not db.update_psychologist_status(current_user_email, status):
+        return jsonify({"error": "Failed to update status"}), 500
+
+    return jsonify({"success": True, "status": status})
+
 @app.route('/api/messages/send', methods=['POST'])
 @token_required
 def send_direct_message(current_user_id, current_user_email):
@@ -1213,6 +1236,10 @@ def send_chat_request(current_user_id, current_user_email):
     import uuid
     request_id = str(uuid.uuid4())
     
+    psychologist = db.get_user_by_email(psychologist_id)
+    if psychologist and (psychologist.get("availability_status") or "available") == "offline":
+        return jsonify({"error": "This psychologist is currently offline"}), 409
+
     # Create chat request
     result = db.create_chat_request(request_id, current_user_email, psychologist_id, message)
     print(f"DEBUG SEND REQUEST: Chat request created - {request_id}")
@@ -1261,8 +1288,21 @@ def accept_chat_request(current_user_id, current_user_email, request_id):
         print(f"DEBUG ACCEPT: Unauthorized - {chat_request.get('psychologist_id')} != {current_user_email}/{current_user_id}")
         return jsonify({"error": "Unauthorized"}), 403
     
-    # Update status to accepted
-    db.update_chat_request_status(request_id, "accepted")
+    # Update status to accepted and record the psychologist-client relationship.
+    if not db.update_chat_request_status(request_id, "accepted"):
+        return jsonify({"error": "Failed to accept request"}), 500
+
+    connected = db.connect_psychologist_to_user(
+        request_psychologist_id,
+        chat_request.get("user_id")
+    )
+    if not connected:
+        return jsonify({"error": "Request accepted, but failed to record psychologist user"}), 500
+
+    initial_message = (chat_request.get("message") or "").strip()
+    if initial_message:
+        db.save_direct_message(chat_request.get("user_id"), request_psychologist_id, initial_message)
+
     print(f"DEBUG ACCEPT: Request {request_id} status updated to accepted")
     
     return jsonify({

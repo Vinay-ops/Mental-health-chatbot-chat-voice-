@@ -120,6 +120,19 @@
             animation: pulse 2s infinite;
         }
 
+        .status-badge.busy .dot {
+            background: #ffc107;
+        }
+
+        .status-badge.offline .dot {
+            background: #adb5bd;
+            animation: none;
+        }
+
+        .psychologist-card.offline {
+            opacity: 0.78;
+        }
+
         @keyframes pulse {
             0%, 100% {
                 opacity: 1;
@@ -211,6 +224,13 @@
             box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
             color: white;
             text-decoration: none;
+        }
+
+        .btn-start-chat:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .no-psychologists {
@@ -477,6 +497,7 @@
         // Use the same origin as current page (no CORS issues)
         const backendBase = window.location.origin;
         let allPsychologists = [];
+        let displayedPsychologists = [];
         let selectedPsychologist = null;
 
         // Get auth token
@@ -537,6 +558,7 @@
         // Display psychologists in grid
         function displayPsychologists(psychologists) {
             const container = document.getElementById('psychologistsList');
+            displayedPsychologists = psychologists || [];
             
             if (!psychologists || psychologists.length === 0) {
                 container.innerHTML = '';
@@ -545,34 +567,40 @@
             }
 
             document.getElementById('noPsychologists').style.display = 'none';
-            container.innerHTML = psychologists.map(psych => `
-                <div class="psychologist-card">
+            container.innerHTML = psychologists.map((psych, index) => {
+                const status = (psych.status || 'available').toLowerCase();
+                const isOffline = status === 'offline';
+                const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+
+                return `
+                <div class="psychologist-card ${isOffline ? 'offline' : ''}">
                     <div class="card-header">
-                        <div class="status-badge">
+                        <div class="status-badge ${status}">
                             <span class="dot"></span>
-                            <span>${psych.status}</span>
+                            <span>${statusLabel}</span>
                         </div>
                         <div class="avatar">
                             <i class="bi bi-person-check"></i>
                         </div>
-                        <div class="psychologist-name">${psych.name}</div>
+                        <div class="psychologist-name">${escapeHtml(psych.name || 'Psychologist')}</div>
                     </div>
                     <div class="card-body">
-                        <div class="specialization">${psych.specialization}</div>
-                        <div class="bio">${psych.bio}</div>
+                        <div class="specialization">${escapeHtml(psych.specialization || 'General Counseling')}</div>
+                        <div class="bio">${escapeHtml(psych.bio || 'Professional mental health expert')}</div>
                         <div class="rating-section">
                             <div class="rating">
                                 <i class="bi bi-star-fill star"></i>
-                                <span>${psych.rating}</span>
+                                <span>${escapeHtml(psych.rating || '4.8')}</span>
                             </div>
-                            <div class="experience">${psych.experience} yrs exp</div>
+                            <div class="experience">${escapeHtml(psych.experience || '5')} yrs exp</div>
                         </div>
-                        <button class="btn-start-chat" onclick="openChatRequestModal('${psych.id}', '${psych.name}')">
-                            <i class="bi bi-chat-dots"></i> Start Chat
+                        <button class="btn-start-chat" ${isOffline ? 'disabled' : ''} onclick="openChatRequestByIndex(${index})">
+                            <i class="bi ${isOffline ? 'bi-moon' : 'bi-chat-dots'}"></i> ${isOffline ? 'Offline' : 'Start Chat'}
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Filter psychologists
@@ -586,7 +614,19 @@
         }
 
         // Open chat request modal
+        function openChatRequestByIndex(index) {
+            const psych = displayedPsychologists[index];
+            if (!psych) return;
+            openChatRequestModal(psych.id, psych.name || 'Psychologist');
+        }
+
         function openChatRequestModal(psychologistId, psychologistName) {
+            const psych = allPsychologists.find(item => item.id === psychologistId);
+            if (psych && (psych.status || '').toLowerCase() === 'offline') {
+                alert(`${psychologistName} is currently offline. Please choose another psychologist or try again later.`);
+                return;
+            }
+
             selectedPsychologist = {
                 id: psychologistId,
                 name: psychologistName
@@ -637,6 +677,10 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 409) {
+                        const data = await response.json().catch(() => ({}));
+                        throw new Error(data.error || 'This psychologist is currently offline');
+                    }
                     throw new Error(`Failed to send request: ${response.status}`);
                 }
 
@@ -647,7 +691,7 @@
                 window.location.href = `/psychologist-chat?requestId=${data.request_id}`;
             } catch (error) {
                 console.error('Error sending chat request:', error);
-                alert('Failed to send chat request. Please try again.');
+                alert(error.message || 'Failed to send chat request. Please try again.');
                 sendRequestBtn.disabled = false;
                 sendRequestText.style.display = 'inline';
                 sendRequestSpinner.style.display = 'none';

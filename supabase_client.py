@@ -90,6 +90,7 @@ class SupabaseClient:
                     password_hash VARCHAR(255) NOT NULL,
                     name VARCHAR(255),
                     user_type VARCHAR(50) DEFAULT 'user',
+                    availability_status VARCHAR(50) DEFAULT 'available',
                     specialization VARCHAR(255),
                     license_number VARCHAR(255),
                     bio TEXT,
@@ -190,6 +191,11 @@ class SupabaseClient:
                 cursor.execute("ALTER TABLE users ADD COLUMN bio TEXT")
             except:
                 pass
+
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN availability_status VARCHAR(50) DEFAULT 'available'")
+            except:
+                pass
             
             try:
                 cursor.execute("ALTER TABLE users ADD COLUMN updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")
@@ -248,7 +254,7 @@ class SupabaseClient:
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             cursor.execute("""
-                SELECT id as _id, email, password_hash, name, user_type, 
+                SELECT id as _id, email, password_hash, name, user_type, availability_status,
                        specialization, license_number, bio, created_at
                 FROM users 
                 WHERE LOWER(email) = LOWER(%s)
@@ -280,7 +286,7 @@ class SupabaseClient:
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             cursor.execute("""
-                SELECT id, email, name, specialization, license_number, bio, created_at
+                SELECT id, email, name, availability_status, specialization, license_number, bio, created_at
                 FROM users 
                 WHERE user_type = 'psychologist'
                 ORDER BY created_at DESC
