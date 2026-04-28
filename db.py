@@ -6,10 +6,57 @@ from datetime import datetime
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+# Import the new Supabase client
+from supabase_client import supabase_client
+
 # Fallback JSON File
 JSON_DB_FILE = "local_db.json"
 
 _use_json_fallback = False
+
+def _normalize_identifier(identifier: str):
+    """Normalize an identifier (email or ID)"""
+    if identifier is None:
+        return None
+    text = str(identifier).strip()
+    return text if text else None
+
+def resolve_user_identifier(identifier: str):
+    """
+    Resolve a user identifier (email or numeric id) to canonical email.
+    Falls back to original identifier when user cannot be resolved.
+    """
+    normalized = _normalize_identifier(identifier)
+    if not normalized:
+        return normalized
+    if "@" in normalized:
+        return normalized.lower()
+
+    # Try to resolve ID to email from database
+    if not _use_json_fallback:
+        conn = supabase_client.get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                cursor.execute("SELECT email FROM users WHERE id = %s", (normalized,))
+                row = cursor.fetchone()
+                cursor.close()
+                conn.close()
+                if row and row.get("email"):
+                    return str(row.get("email")).lower()
+            except Exception as e:
+                print(f"DEBUG: Error resolving identifier from DB: {e}")
+
+    # Try JSON fallback
+    try:
+        data = _load_json_db()
+        for user in data.get("users", []):
+            if str(user.get("email", "")).lower() == normalized.lower():
+                return str(user.get("email")).lower()
+    except Exception:
+        pass
+    
+    return normalized.lower()
 
 def _load_json_db():
     if not os.path.exists(JSON_DB_FILE):
@@ -28,205 +75,16 @@ def _save_json_db(data):
         print(f"DEBUG: Error saving JSON DB: {e}")
 
 def get_db_connection():
-    global _use_json_fallback
-    try:
-        database_url = os.getenv("DATABASE_URL")
-        if database_url:
-            conn = psycopg2.connect(database_url, connect_timeout=10)
-        else:
-            host = os.getenv("PG_HOST", "localhost")
-            port = int(os.getenv("PG_PORT", "6543"))
-            dbname = os.getenv("PG_DATABASE", "postgres")
-            user = os.getenv("PG_USER", "postgres")
-            password = os.getenv("PG_PASSWORD", "")
-
-            connect_kwargs = {
-                "host": host,
-                "port": port,
-                "dbname": dbname,
-                "user": user,
-                "password": password,
-                "connect_timeout": 10,
-            }
-            if host.endswith("supabase.co"):
-                connect_kwargs["sslmode"] = "require"
-
-            conn = psycopg2.connect(**connect_kwargs)
-        return conn
-    except Exception as err:
-        print(f"DEBUG: Postgres Connection Error: {err}")
-        _use_json_fallback = True
-        return None
-
-_connection_checked = False
-_force_offline = False
-
-def _normalize_identifier(identifier: str):
-    if identifier is None:
-        return None
-    text = str(identifier).strip()
-    return text if text else None
-
-def resolve_user_identifier(identifier: str):
-    """
-    Resolve a user identifier (email or numeric id) to canonical email.
-    Falls back to original identifier when user cannot be resolved.
-    """
-    normalized = _normalize_identifier(identifier)
-    if not normalized:
-        return normalized
-    if "@" in normalized:
-        return normalized.lower()
-
-    if not _use_json_fallback:
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                cursor.execute("SELECT email FROM users WHERE id = %s", (normalized,))
-                row = cursor.fetchone()
-                cursor.close()
-                conn.close()
-                if row and row.get("email"):
-                    return str(row.get("email")).lower()
-            except Exception as e:
-                print(f"DEBUG: Error resolving identifier from DB: {e}")
-
-    try:
-        data = _load_json_db()
-        for user in data.get("users", []):
-            if str(user.get("email", "")).lower() == normalized.lower():
-                return str(user.get("email")).lower()
-    except Exception:
-        pass
-    return normalized.lower()
-
-def set_force_offline(value: bool):
-    global _force_offline
-    _force_offline = value
+    """Get database connection using Supabase client"""
+    return supabase_client.get_db_connection()
 
 def check_connection():
-    global _connection_checked, _use_json_fallback, _force_offline
-    if _force_offline:
-        _use_json_fallback = True
-        return False
-    try:
-        conn = get_db_connection()
-        if conn:
-            conn.close()
-            _use_json_fallback = False
-            return True
-        else:
-            _use_json_fallback = True
-            return False
-    except Exception:
-        _use_json_fallback = True
-        return False
+    """Check if connection is available"""
+    return supabase_client.check_connection()
 
 def ensure_schema():
-    conn = get_db_connection()
-    if not conn: 
-        print("DEBUG: Cannot ensure schema - no connection.")
-        return
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                name VARCHAR(255),
-                user_type VARCHAR(50) DEFAULT 'user',
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chat_logs (
-                id SERIAL PRIMARY KEY,
-                role VARCHAR(50) NOT NULL,
-                content TEXT NOT NULL,
-                user_id VARCHAR(255),
-                session_id VARCHAR(255),
-                ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_user_session
-            ON chat_logs (user_id, session_id)
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS community_posts (
-                id SERIAL PRIMARY KEY,
-                user_id VARCHAR(255),
-                name VARCHAR(255),
-                content TEXT NOT NULL,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                likes INT DEFAULT 0
-            )
-        """)
-        try:
-            cursor.execute("ALTER TABLE community_posts ADD COLUMN likes INT DEFAULT 0")
-        except Exception:
-            pass
-        
-        # Add user_type column if it doesn't exist (for existing databases)
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN user_type VARCHAR(50) DEFAULT 'user'")
-        except Exception:
-            pass
-        
-        # Create psychologist-user connections table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS psychologist_users (
-                id SERIAL PRIMARY KEY,
-                psychologist_id VARCHAR(255) NOT NULL,
-                user_id VARCHAR(255) NOT NULL,
-                status VARCHAR(50) DEFAULT 'active',
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(psychologist_id, user_id)
-            )
-        """)
-        
-        # Create direct message table for psychologist-user chats
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS direct_messages (
-                id SERIAL PRIMARY KEY,
-                sender_id VARCHAR(255) NOT NULL,
-                receiver_id VARCHAR(255) NOT NULL,
-                message TEXT NOT NULL,
-                is_read BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_direct_messages
-            ON direct_messages (sender_id, receiver_id, created_at DESC)
-        """)
-        
-        # Create chat requests table for user-psychologist chat requests
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chat_requests (
-                id SERIAL PRIMARY KEY,
-                request_id VARCHAR(255) UNIQUE NOT NULL,
-                user_id VARCHAR(255) NOT NULL,
-                psychologist_id VARCHAR(255) NOT NULL,
-                message TEXT,
-                status VARCHAR(50) DEFAULT 'pending',
-                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_chat_requests_status
-            ON chat_requests (psychologist_id, status)
-        """)
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("DEBUG: Database schema ensured.")
-    except Exception as e:
-        print(f"DEBUG: Schema error: {e}")
+    """Ensure database schema exists"""
+    return supabase_client.ensure_schema()
 
 def save_log(role: str, content: str, user_id: str = None, session_id: str = None):
     # 1. Always save to local JSON (Local Redundancy)
@@ -339,70 +197,16 @@ def get_user_sessions(user_id: str):
     return sorted(list(sessions), reverse=True)
 
 def get_user_by_email(email: str):
-    # 1. Try Supabase first (Primary source)
-    if not _use_json_fallback:
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                cursor.execute("SELECT id as _id, email, password_hash, name, user_type FROM users WHERE LOWER(email) = LOWER(%s)", (email,))
-                user = cursor.fetchone()
-                cursor.close()
-                conn.close()
-                if user: return user
-            except Exception as e:
-                print(f"DEBUG: Error getting DB user: {e}")
+    """Get user by email using Supabase client"""
+    return supabase_client.get_user_by_email(email)
 
-    # 2. Fallback to local JSON if not found or offline
-    try:
-        data = _load_json_db()
-        for user in data["users"]:
-            if user["email"] == email:
-                user["_id"] = user.get("email") # Mock ID for JWT
-                user["user_type"] = user.get("user_type", "user")
-                return user
-    except Exception:
-        pass
-        
-    return None
 def create_user(email: str, password_hash: str, name: str, user_type: str = "user"):
-    # 1. Try Supabase first (Primary source)
-    db_uid = None
-    if not _use_json_fallback:
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO users (email, password_hash, name, user_type, created_at) VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                    (email, password_hash, name, user_type, datetime.utcnow())
-                )
-                row = cursor.fetchone()
-                conn.commit()
-                cursor.close()
-                conn.close()
-                if row: db_uid = str(row[0])
-            except Exception as e:
-                print(f"DEBUG: Error creating DB user: {e}")
+    """Create user using Supabase client"""
+    return supabase_client.create_user(email, password_hash, name, user_type)
 
-    # 2. Always save to local JSON (Sync/Redundancy)
-    try:
-        data = _load_json_db()
-        if not any(u["email"] == email for u in data["users"]):
-            new_user = {
-                "email": email,
-                "password_hash": password_hash,
-                "name": name,
-                "user_type": user_type,
-                "created_at": datetime.utcnow().isoformat()
-            }
-            data["users"].append(new_user)
-            _save_json_db(data)
-    except Exception:
-        pass
-
-    # Return DB ID if we got one, otherwise return email as mock ID
-    return db_uid or email
+def get_all_psychologists():
+    """Get all psychologists using Supabase client"""
+    return supabase_client.get_all_psychologists()
 
 def add_community_post(user_id: str, name: str, content: str):
     # 1. Save to local JSON
