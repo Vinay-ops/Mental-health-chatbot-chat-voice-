@@ -485,18 +485,26 @@ def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: in
     viewer_canonical = resolve_user_identifier(viewer_id)
     other_canonical = resolve_user_identifier(other_user_id)
 
+    print(f"DEBUG GET_MSGS_VIEWER: viewer_id={viewer_id} -> {viewer_canonical}, other_id={other_user_id} -> {other_canonical}, limit={limit}")
+
+    # First try the direct message table
     messages = get_direct_messages(viewer_canonical, other_canonical, limit)
     if messages:
+        print(f"DEBUG GET_MSGS_VIEWER: found {len(messages)} direct messages between {viewer_canonical} and {other_canonical}")
         return messages
+    print(f"DEBUG GET_MSGS_VIEWER: no direct messages found for {viewer_canonical} <-> {other_canonical}")
 
+    # Fallback: check accepted chat_requests for an initial message
     conn = get_db_connection()
     if not conn:
+        print("DEBUG GET_MSGS_VIEWER: no DB connection for fallback lookup")
         return messages
 
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         other_aliases = get_user_identifier_aliases(other_canonical)
         viewer_aliases = get_user_identifier_aliases(viewer_canonical)
+        print(f"DEBUG GET_MSGS_VIEWER: other_aliases={other_aliases}, viewer_aliases={viewer_aliases}")
         cursor.execute("""
             SELECT request_id, user_id, psychologist_id, message, status, created_at, updated_at
             FROM chat_requests
@@ -507,11 +515,13 @@ def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: in
             LIMIT 1
         """, (other_aliases, viewer_aliases))
         row = cursor.fetchone()
+        print(f"DEBUG GET_MSGS_VIEWER: chat_request row={row}")
         cursor.close()
         conn.close()
         if row and row.get("message"):
             initial_message = str(row.get("message") or "").strip()
             if initial_message:
+                print(f"DEBUG GET_MSGS_VIEWER: returning initial request message for request_id={row.get('request_id')}")
                 return [{
                     "id": f"request-{row.get('request_id')}",
                     "sender_id": row.get("user_id") or other_canonical,
@@ -527,6 +537,7 @@ def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: in
         except:
             pass
 
+    print(f"DEBUG GET_MSGS_VIEWER: fallback found nothing; returning empty list")
     return messages
 
 # ===== Chat Request functions =====
