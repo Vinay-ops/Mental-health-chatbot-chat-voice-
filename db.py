@@ -447,7 +447,6 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
     """Get direct messages between two users"""
     user1_aliases = get_user_identifier_aliases(user1_id)
     user2_aliases = get_user_identifier_aliases(user2_id)
-    all_aliases = list(set(user1_aliases + user2_aliases))
 
     conn = get_db_connection()
     if not conn:
@@ -459,25 +458,16 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
         cursor.execute("""
             SELECT id, sender_id, receiver_id, message, is_read, created_at
             FROM direct_messages
-            WHERE sender_id = ANY(%s) OR receiver_id = ANY(%s)
+            WHERE (sender_id = ANY(%s) AND receiver_id = ANY(%s))
+               OR (sender_id = ANY(%s) AND receiver_id = ANY(%s))
             ORDER BY created_at ASC
             LIMIT %s
-        """, (all_aliases, all_aliases, limit * 3))
-        rows = cursor.fetchall()
+        """, (user1_aliases, user2_aliases, user2_aliases, user1_aliases, limit))
+        messages = cursor.fetchall()
         cursor.close()
         conn.close()
 
-        user1_set = set(user1_aliases)
-        user2_set = set(user2_aliases)
-        messages = [
-            row for row in rows
-            if (
-                str(row.get("sender_id")) in user1_set and str(row.get("receiver_id")) in user2_set
-            ) or (
-                str(row.get("sender_id")) in user2_set and str(row.get("receiver_id")) in user1_set
-            )
-        ]
-        return messages[-limit:]
+        return messages
     except Exception as e:
         print(f"ERROR: Error getting messages: {e}")
         try:
@@ -489,41 +479,9 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
 def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: int = 100):
     """
     Get direct messages for a viewer and another user.
-    If the viewer is a psychologist, prefer the psychologist id from the accepted
-    relationship/request so stale tokens or mixed ids do not hide the chat.
     """
     viewer_canonical = resolve_user_identifier(viewer_id)
     other_canonical = resolve_user_identifier(other_user_id)
-
-    viewer = supabase_client.get_user_by_email(viewer_canonical) if viewer_canonical else None
-    if viewer and viewer.get("user_type") == "psychologist":
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                other_aliases = get_user_identifier_aliases(other_canonical)
-                viewer_aliases = get_user_identifier_aliases(viewer_canonical)
-                cursor.execute("""
-                    SELECT psychologist_id
-                    FROM chat_requests
-                    WHERE status = 'accepted'
-                      AND user_id = ANY(%s)
-                      AND psychologist_id = ANY(%s)
-                    ORDER BY updated_at DESC
-                    LIMIT 1
-                """, (other_aliases, viewer_aliases))
-                row = cursor.fetchone()
-                cursor.close()
-                conn.close()
-                if row and row.get("psychologist_id"):
-                    return get_direct_messages(row.get("psychologist_id"), other_canonical, limit)
-            except Exception as e:
-                print(f"ERROR: Error resolving psychologist chat relationship: {e}")
-                try:
-                    conn.close()
-                except:
-                    pass
-
     return get_direct_messages(viewer_canonical, other_canonical, limit)
 
 # ===== Chat Request functions =====
