@@ -506,7 +506,19 @@ def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: in
                 cursor.close()
                 conn.close()
                 if row and row.get("psychologist_id"):
-                    return get_direct_messages(row.get("psychologist_id"), other_canonical, limit)
+                    messages = get_direct_messages(row.get("psychologist_id"), other_canonical, limit)
+                    if messages:
+                        return messages
+                    initial_message = (row.get("message") or "").strip()
+                    if initial_message:
+                        return [{
+                            "id": f"request-{row.get('request_id')}",
+                            "sender_id": other_canonical,
+                            "receiver_id": row.get("psychologist_id"),
+                            "message": initial_message,
+                            "is_read": False,
+                            "created_at": row.get("updated_at") or row.get("created_at")
+                        }]
             except Exception as e:
                 print(f"ERROR: Error resolving psychologist chat relationship: {e}")
                 try:
