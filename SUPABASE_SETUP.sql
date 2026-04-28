@@ -8,10 +8,21 @@
 
 -- 1. ALTER EXISTING USERS TABLE - Add user_type column
 -- This adds the role distinction for users vs psychologists
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
+    user_type VARCHAR(50) DEFAULT 'user',
+    specialization VARCHAR(255),
+    license_number VARCHAR(255),
+    bio TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type VARCHAR(50) DEFAULT 'user';
 
--- 2. CREATE PSYCHOLOGIST_USERS TABLE
--- Tracks which users are connected to which psychologists
 CREATE TABLE IF NOT EXISTS psychologist_users (
     id SERIAL PRIMARY KEY,
     psychologist_id VARCHAR(255) NOT NULL,
@@ -21,7 +32,48 @@ CREATE TABLE IF NOT EXISTS psychologist_users (
     UNIQUE(psychologist_id, user_id)
 );
 
--- 3. CREATE DIRECT_MESSAGES TABLE
+-- 3. CREATE CHAT_LOGS TABLE
+-- Stores the main conversation history for each user session
+CREATE TABLE IF NOT EXISTS chat_logs (
+    id SERIAL PRIMARY KEY,
+    role VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    user_id VARCHAR(255),
+    session_id VARCHAR(255),
+    ts TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_session
+ON chat_logs (user_id, session_id);
+
+-- 4. CREATE COMMUNITY_POSTS TABLE
+-- Stores community support posts
+CREATE TABLE IF NOT EXISTS community_posts (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255),
+    name VARCHAR(255),
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    likes INT DEFAULT 0
+);
+
+-- 5. CREATE CHAT_REQUESTS TABLE
+-- Tracks pending and accepted psychologist connection requests
+CREATE TABLE IF NOT EXISTS chat_requests (
+    id SERIAL PRIMARY KEY,
+    request_id VARCHAR(255) UNIQUE NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    psychologist_id VARCHAR(255) NOT NULL,
+    message TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_requests_status
+ON chat_requests (psychologist_id, status);
+
+-- 6. CREATE DIRECT_MESSAGES TABLE
 -- Stores direct messages between psychologists and users
 CREATE TABLE IF NOT EXISTS direct_messages (
     id SERIAL PRIMARY KEY,
@@ -104,11 +156,16 @@ WHERE table_name='users' AND column_name='user_type';
 -- Count tables
 SELECT table_name FROM information_schema.tables 
 WHERE table_schema='public' 
-AND table_name IN ('psychologist_users', 'direct_messages');
+AND table_name IN ('users', 'chat_logs', 'community_posts', 'chat_requests', 'psychologist_users', 'direct_messages');
+
+-- Count all required tables
+SELECT table_name FROM information_schema.tables
+WHERE table_schema='public'
+AND table_name IN ('chat_logs', 'community_posts', 'chat_requests', 'psychologist_users', 'direct_messages');
 
 -- Check all indexes created
 SELECT indexname FROM pg_indexes 
-WHERE tablename IN ('psychologist_users', 'direct_messages');
+WHERE tablename IN ('chat_logs', 'chat_requests', 'psychologist_users', 'direct_messages');
 
 -- ============================================
 -- CLEANUP (Run if you need to reset - BE CAREFUL!)
