@@ -706,6 +706,12 @@
             window.location.href = '/login';
         }
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : String(text);
+            return div.innerHTML;
+        }
+
         // Close modal when clicking outside
         document.getElementById('chatRequestModal').addEventListener('click', (e) => {
             if (e.target.id === 'chatRequestModal') {
