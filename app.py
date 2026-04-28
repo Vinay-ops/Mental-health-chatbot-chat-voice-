@@ -28,6 +28,13 @@ load_dotenv()
 
 app = Flask(__name__)
 
+try:
+    if db.check_connection():
+        db.ensure_schema()
+        print("DEBUG: Database schema verified.")
+except Exception as e:
+    print(f"DEBUG: Schema initialization failed: {e}")
+
 # Add CORS headers to all responses
 @app.after_request
 def add_cors_headers(response):
@@ -1381,12 +1388,4 @@ def get_pending_requests(current_user_id, current_user_email, psychologist_id):
     return jsonify({"requests": requests})
 
 if __name__ == '__main__':
-    # Initialize DB Schema once at startup
-    try:
-        if db.check_connection():
-            db.ensure_schema()
-            print("DEBUG: Database schema verified.")
-    except Exception as e:
-        print(f"DEBUG: Schema initialization failed: {e}")
-        
     app.run(debug=True, port=8002)

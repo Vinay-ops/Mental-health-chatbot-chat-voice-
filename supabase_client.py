@@ -253,16 +253,28 @@ class SupabaseClient:
             
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("""
-                SELECT id as _id, email, password_hash, name, user_type, availability_status,
-                       specialization, license_number, bio, created_at
-                FROM users 
-                WHERE LOWER(email) = LOWER(%s)
-            """, (email,))
+            try:
+                cursor.execute("""
+                    SELECT id as _id, email, password_hash, name, user_type, availability_status,
+                           specialization, license_number, bio, created_at
+                    FROM users 
+                    WHERE LOWER(email) = LOWER(%s)
+                """, (email,))
+            except Exception as select_error:
+                conn.rollback()
+                print(f"DEBUG: Falling back to users query without availability_status: {select_error}")
+                cursor.execute("""
+                    SELECT id as _id, email, password_hash, name, user_type,
+                           specialization, license_number, bio, created_at
+                    FROM users 
+                    WHERE LOWER(email) = LOWER(%s)
+                """, (email,))
             user = cursor.fetchone()
             cursor.close()
             conn.close()
             if user:
+                if "availability_status" not in user:
+                    user["availability_status"] = "available"
                 print(f"DEBUG: Found user in Supabase: {email} (Type: {user.get('user_type')})")
                 return user
         except Exception as e:
@@ -285,15 +297,28 @@ class SupabaseClient:
             
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("""
-                SELECT id, email, name, availability_status, specialization, license_number, bio, created_at
-                FROM users 
-                WHERE user_type = 'psychologist'
-                ORDER BY created_at DESC
-            """)
+            try:
+                cursor.execute("""
+                    SELECT id, email, name, availability_status, specialization, license_number, bio, created_at
+                    FROM users 
+                    WHERE user_type = 'psychologist'
+                    ORDER BY created_at DESC
+                """)
+            except Exception as select_error:
+                conn.rollback()
+                print(f"DEBUG: Falling back to psychologists query without availability_status: {select_error}")
+                cursor.execute("""
+                    SELECT id, email, name, specialization, license_number, bio, created_at
+                    FROM users 
+                    WHERE user_type = 'psychologist'
+                    ORDER BY created_at DESC
+                """)
             psychologists = cursor.fetchall()
             cursor.close()
             conn.close()
+            for psych in psychologists:
+                if "availability_status" not in psych:
+                    psych["availability_status"] = "available"
             print(f"DEBUG: Retrieved {len(psychologists)} psychologists from Supabase")
         except Exception as e:
             print(f"ERROR: Error getting psychologists: {e}")
