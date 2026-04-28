@@ -486,6 +486,46 @@ def get_direct_messages(user1_id: str, user2_id: str, limit: int = 100):
             pass
         return []
 
+def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: int = 100):
+    """
+    Get direct messages for a viewer and another user.
+    If the viewer is a psychologist, prefer the psychologist id from the accepted
+    relationship/request so stale tokens or mixed ids do not hide the chat.
+    """
+    viewer_canonical = resolve_user_identifier(viewer_id)
+    other_canonical = resolve_user_identifier(other_user_id)
+
+    viewer = supabase_client.get_user_by_email(viewer_canonical) if viewer_canonical else None
+    if viewer and viewer.get("user_type") == "psychologist":
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                other_aliases = get_user_identifier_aliases(other_canonical)
+                viewer_aliases = get_user_identifier_aliases(viewer_canonical)
+                cursor.execute("""
+                    SELECT psychologist_id
+                    FROM chat_requests
+                    WHERE status = 'accepted'
+                      AND user_id = ANY(%s)
+                      AND psychologist_id = ANY(%s)
+                    ORDER BY updated_at DESC
+                    LIMIT 1
+                """, (other_aliases, viewer_aliases))
+                row = cursor.fetchone()
+                cursor.close()
+                conn.close()
+                if row and row.get("psychologist_id"):
+                    return get_direct_messages(row.get("psychologist_id"), other_canonical, limit)
+            except Exception as e:
+                print(f"ERROR: Error resolving psychologist chat relationship: {e}")
+                try:
+                    conn.close()
+                except:
+                    pass
+
+    return get_direct_messages(viewer_canonical, other_canonical, limit)
+
 # ===== Chat Request functions =====
 
 def create_chat_request(request_id: str, user_id: str, psychologist_id: str, message: str = None):

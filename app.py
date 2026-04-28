@@ -1171,7 +1171,7 @@ def get_direct_messages(current_user_id, current_user_email, other_user_id):
     print(f"DEBUG MESSAGE GET: Getting messages between {current_user_email} and {other_user_id}")
     
     limit = request.args.get('limit', 100, type=int)
-    messages = db.get_direct_messages(current_user_email, other_user_id, limit)
+    messages = db.get_direct_messages_for_viewer(current_user_email, other_user_id, limit)
     
     print(f"DEBUG MESSAGE GET: Found {len(messages)} messages")
     return jsonify({"messages": messages})
