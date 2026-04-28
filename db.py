@@ -485,47 +485,49 @@ def get_direct_messages_for_viewer(viewer_id: str, other_user_id: str, limit: in
     viewer_canonical = resolve_user_identifier(viewer_id)
     other_canonical = resolve_user_identifier(other_user_id)
 
-    viewer = supabase_client.get_user_by_email(viewer_canonical) if viewer_canonical else None
-    if viewer and viewer.get("user_type") == "psychologist":
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                other_aliases = get_user_identifier_aliases(other_canonical)
-                viewer_aliases = get_user_identifier_aliases(viewer_canonical)
-                cursor.execute("""
-                    SELECT psychologist_id
-                    FROM chat_requests
-                    WHERE status = 'accepted'
-                      AND user_id = ANY(%s)
-                      AND psychologist_id = ANY(%s)
-                    ORDER BY updated_at DESC
-                    LIMIT 1
-                """, (other_aliases, viewer_aliases))
-                row = cursor.fetchone()
-                cursor.close()
-                conn.close()
-                if row and row.get("psychologist_id"):
-                    messages = get_direct_messages(row.get("psychologist_id"), other_canonical, limit)
-                    if messages:
-                        return messages
-                    initial_message = (row.get("message") or "").strip()
-                    if initial_message:
-                        return [{
-                            "id": f"request-{row.get('request_id')}",
-                            "sender_id": other_canonical,
-                            "receiver_id": row.get("psychologist_id"),
-                            "message": initial_message,
-                            "is_read": False,
-                            "created_at": row.get("updated_at") or row.get("created_at")
-                        }]
-            except Exception as e:
-                print(f"ERROR: Error resolving psychologist chat relationship: {e}")
-                try:
-                    conn.close()
-                except:
-                    pass
-    return get_direct_messages(viewer_canonical, other_canonical, limit)
+    messages = get_direct_messages(viewer_canonical, other_canonical, limit)
+    if messages:
+        return messages
+
+    conn = get_db_connection()
+    if not conn:
+        return messages
+
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        other_aliases = get_user_identifier_aliases(other_canonical)
+        viewer_aliases = get_user_identifier_aliases(viewer_canonical)
+        cursor.execute("""
+            SELECT request_id, user_id, psychologist_id, message, status, created_at, updated_at
+            FROM chat_requests
+            WHERE status = 'accepted'
+              AND user_id = ANY(%s)
+              AND psychologist_id = ANY(%s)
+            ORDER BY updated_at DESC
+            LIMIT 1
+        """, (other_aliases, viewer_aliases))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if row and row.get("message"):
+            initial_message = str(row.get("message") or "").strip()
+            if initial_message:
+                return [{
+                    "id": f"request-{row.get('request_id')}",
+                    "sender_id": row.get("user_id") or other_canonical,
+                    "receiver_id": row.get("psychologist_id") or viewer_canonical,
+                    "message": initial_message,
+                    "is_read": False,
+                    "created_at": row.get("updated_at") or row.get("created_at")
+                }]
+    except Exception as e:
+        print(f"ERROR: Error resolving chat fallback: {e}")
+        try:
+            conn.close()
+        except:
+            pass
+
+    return messages
 
 # ===== Chat Request functions =====
 
