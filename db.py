@@ -8,13 +8,20 @@ from psycopg2.extras import RealDictCursor
 
 # Import the new Supabase client
 from supabase_client import supabase_client
+from urllib.parse import unquote
 
 def _normalize_identifier(identifier: str):
-    """Normalize an identifier (email or ID)"""
+    """Normalize an identifier (email or ID). Decode percent-encoding if present."""
     if identifier is None:
         return None
     text = str(identifier).strip()
-    return text if text else None
+    if not text:
+        return None
+    try:
+        decoded = unquote(text)
+    except Exception:
+        decoded = text
+    return decoded if decoded else None
 
 def resolve_user_identifier(identifier: str):
     """
@@ -24,15 +31,20 @@ def resolve_user_identifier(identifier: str):
     normalized = _normalize_identifier(identifier)
     if not normalized:
         return normalized
+    # If it looks like an email, use it directly
     if "@" in normalized:
         return normalized.lower()
 
-    # Try to resolve ID to email from database
+    # Try to resolve ID (or other alias) to email from database.
+    # Use id::text and LOWER(email) to avoid type errors for non-numeric ids.
     conn = supabase_client.get_db_connection()
     if conn:
         try:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("SELECT email FROM users WHERE id = %s", (normalized,))
+            cursor.execute("""
+                SELECT email FROM users
+                WHERE LOWER(email) = LOWER(%s) OR id::text = %s
+            """, (normalized, normalized))
             row = cursor.fetchone()
             cursor.close()
             conn.close()
@@ -43,7 +55,6 @@ def resolve_user_identifier(identifier: str):
     else:
         print("ERROR: Cannot resolve identifier - no Supabase connection")
 
-    
     return normalized.lower()
 
 def get_user_identifier_aliases(identifier: str):
