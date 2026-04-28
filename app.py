@@ -1325,17 +1325,18 @@ def get_pending_requests(current_user_id, current_user_email, psychologist_id):
     db.check_connection()
     
     print(f"DEBUG PENDING: current_user_id={current_user_id}, current_user_email={current_user_email}, psychologist_id={psychologist_id}")
-    
-    # Verify psychologist is requesting their own requests
-    requested_id = db.resolve_user_identifier(psychologist_id)
-    current_id = db.resolve_user_identifier(current_user_id)
-    current_email = db.resolve_user_identifier(current_user_email)
-    if requested_id not in [current_id, current_email]:
-        print(f"DEBUG PENDING: Unauthorized - {psychologist_id} != {current_user_id} and != {current_user_email}")
-        return jsonify({"error": "Unauthorized"}), 403
-    
-    requests = db.get_pending_requests(requested_id)
-    print(f"DEBUG PENDING: Found {len(requests)} pending requests for {psychologist_id}")
+
+    # Always use authenticated token identity as source of truth.
+    # URL param can drift with stale sessions/older token formats.
+    authenticated_psychologist_id = db.resolve_user_identifier(current_user_email)
+
+    user = db.get_user_by_email(authenticated_psychologist_id)
+    if not user or user.get("user_type") != "psychologist":
+        print(f"DEBUG PENDING: Unauthorized role for {authenticated_psychologist_id}")
+        return jsonify({"error": "Unauthorized - not a psychologist"}), 403
+
+    requests = db.get_pending_requests(authenticated_psychologist_id)
+    print(f"DEBUG PENDING: Found {len(requests)} pending requests for {authenticated_psychologist_id}")
     
     return jsonify({"requests": requests})
 
