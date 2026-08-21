@@ -24,18 +24,18 @@
                                 <div class="form-check flex-fill">
                                     <input class="form-check-input" type="radio" name="userRole" id="userRole" value="user" checked>
                                     <label class="form-check-label w-100" for="userRole">
-                                        <div style="padding: 12px; border: 2px solid #6f42c1; border-radius: 8px; text-align: center; cursor: pointer;">
-                                            <i class="bi bi-person" style="font-size: 1.5rem; color: #6f42c1;"></i>
-                                            <div style="font-size: 0.9rem; color: #333; font-weight: 600; margin-top: 5px;">User</div>
+                                        <div class="role-tile selected">
+                                            <i class="bi bi-person"></i>
+                                            <div class="role-tile-label">User</div>
                                         </div>
                                     </label>
                                 </div>
                                 <div class="form-check flex-fill">
                                     <input class="form-check-input" type="radio" name="userRole" id="psychologistRole" value="psychologist">
                                     <label class="form-check-label w-100" for="psychologistRole">
-                                        <div style="padding: 12px; border: 2px solid #ccc; border-radius: 8px; text-align: center; cursor: pointer;">
-                                            <i class="bi bi-person-check" style="font-size: 1.5rem; color: #999;"></i>
-                                            <div style="font-size: 0.9rem; color: #666; font-weight: 600; margin-top: 5px;">Psychologist</div>
+                                        <div class="role-tile">
+                                            <i class="bi bi-person-check"></i>
+                                            <div class="role-tile-label">Psychologist</div>
                                         </div>
                                     </label>
                                 </div>
@@ -73,15 +73,9 @@
             document.querySelectorAll('.form-check-label').forEach(label => {
                 const div = label.querySelector('div');
                 if (this.checked && label.htmlFor === this.id) {
-                    div.style.borderColor = '#6f42c1';
-                    div.style.backgroundColor = '#f3f0ff';
-                    div.querySelector('i').style.color = '#6f42c1';
-                    div.querySelector('div:last-child').style.color = '#333';
+                    div.classList.add('selected');
                 } else {
-                    div.style.borderColor = '#ccc';
-                    div.style.backgroundColor = '#fff';
-                    div.querySelector('i').style.color = '#999';
-                    div.querySelector('div:last-child').style.color = '#666';
+                    div.classList.remove('selected');
                 }
             });
         });

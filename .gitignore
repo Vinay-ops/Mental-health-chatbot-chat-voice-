@@ -5,3 +5,8 @@ local_db.json
 .idea/
 venv/
 .vscode/
+
+# Local UI audit/test screenshots
+ui_*.png
+audit_*.png
+*.log

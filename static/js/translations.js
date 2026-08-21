@@ -489,6 +489,9 @@ const translations = {
     }
 };
 
+// Expose for page-level t() helpers (community / locator / contact)
+window.translations = translations;
+
 function applyTranslations(lang) {
     document.querySelectorAll('[data-t]').forEach(el => {
         const key = el.getAttribute('data-t');

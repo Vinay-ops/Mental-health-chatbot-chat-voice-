@@ -1,32 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}MindCare Navigator - Safe AI Support{% endblock %}
+{% block title %}MindCare Navigator - Your AI Wellness Companion{% endblock %}
 
 {% block content %}
 <!-- Modern Background -->
 <div class="mesh-gradient"></div>
 
+<!-- ======================= HERO ======================= -->
 <header class="hero-section">
     <div class="container">
-        <div class="row align-items-center min-vh-75">
-            <div class="col-lg-7 text-start fade-in-up">
-                <div class="badge bg-soft-blue px-3 py-2 rounded-pill mb-4" data-t="chat_status">
-                    <i class="bi bi-shield-check me-2"></i>Safe • Grounded • Non-Diagnostic
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 text-start fade-in-up">
+                <div class="pill-badge mb-4" data-t="chat_status">
+                    <i class="bi bi-shield-check"></i>Safe • Grounded • Non-Diagnostic
                 </div>
-                <h1 class="hero-title fw-bold">
-                    <span data-t="hero_title_main">Safe, Voice-Enabled Mental Health</span>
-                    <span class="text-gradient d-block" data-t="support_system">Support System</span>
+                <h1 class="hero-title">
+                    Your Mind Deserves<br>
+                    <span class="text-gradient">Better Support.</span>
                 </h1>
-                <p class="lead mb-5 text-muted pe-lg-5" style="font-size: 1.25rem;" data-t="hero_subtitle_detailed">Empowering your mental well-being with localized AI. Designed for safety, accessibility, and genuine emotional support.</p>
+                <p class="lead mb-5 text-muted pe-lg-4" style="font-size: 1.18rem;">
+                    An empathetic AI companion that helps you understand your emotions,
+                    build healthier habits, and connect with professional support.
+                </p>
                 <div class="d-flex flex-wrap justify-content-start gap-3">
-                    <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5 shadow-lg" data-t="nav_chat">Start Chat</a>
-                    <a href="{{ url_for('chat', mode='voice') }}" class="btn btn-outline-primary btn-lg px-5" data-t="voice_mode_btn">Use Voice</a>
+                    <a href="{{ url_for('chat') }}" class="btn btn-gradient btn-lg px-4">
+                        <i class="bi bi-stars me-2"></i>Start Your Journey
+                    </a>
+                    <a href="{{ url_for('features') }}" class="btn btn-glass btn-lg px-4">
+                        Explore MindCare <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
                 </div>
             </div>
-            <div class="col-lg-5 d-none d-lg-block fade-in-up" style="animation-delay: 0.2s;">
-                <div class="hero-image-container position-relative">
-                    <div class="glass-card p-2 rounded-5 overflow-hidden shadow-2xl">
-                        <img src="https://img.freepik.com/free-vector/mental-health-awareness-concept_23-2148531011.jpg?t=st=1710831000&exp=1710834600&hmac=7e8e9e" alt="Mental Health Support" class="img-fluid rounded-4" style="animation: float 6s ease-in-out infinite;">
+
+            <!-- Premium AI visual -->
+            <div class="col-lg-6 fade-in-up" style="animation-delay: 0.2s;">
+                <div class="ai-orb-stage">
+                    <div class="ai-orb-net" aria-hidden="true"></div>
+                    <div class="ai-orb-halo" aria-hidden="true"></div>
+                    <div class="ai-orb-halo h2" aria-hidden="true"></div>
+                    <div class="ai-orb-halo h3" aria-hidden="true"></div>
+                    <div class="ai-orb" aria-hidden="true"></div>
+
+                    <!-- Floating info cards (real application capabilities) -->
+                    <div class="floating-card position-absolute" style="top: 6%; left: 0; animation-delay: 0.4s;">
+                        <div class="fc-label">Detected Mood</div>
+                        <div class="fc-value"><i class="bi bi-emoji-heart-eyes me-1" style="color: var(--mc-teal);"></i>Calm &amp; Supported</div>
+                    </div>
+                    <div class="floating-card position-absolute" style="bottom: 16%; left: -4%; animation-delay: 1.3s;">
+                        <div class="fc-label">Speaks Your Language</div>
+                        <div class="fc-value">English • हिन्दी • मराठी</div>
+                    </div>
+                    <div class="floating-card position-absolute" style="top: 20%; right: -2%; animation-delay: 0.9s;">
+                        <div class="fc-label">Two Ways To Talk</div>
+                        <div class="fc-value"><i class="bi bi-chat-dots me-1" style="color: var(--mc-indigo);"></i>Chat <span class="mx-1 text-muted">|</span> <i class="bi bi-mic me-1" style="color: var(--mc-teal);"></i>Voice</div>
+                    </div>
+                    <div class="floating-card position-absolute" style="bottom: 2%; right: 4%; animation-delay: 1.8s;">
+                        <div class="fc-label">Human Help</div>
+                        <div class="fc-value"><i class="bi bi-person-check me-1" style="color: var(--mc-indigo);"></i>Connect a Psychologist</div>
                     </div>
                 </div>
             </div>
@@ -34,18 +64,19 @@
     </div>
 </header>
 
-<!-- Core Pillars Section -->
+<!-- ======================= CORE PILLARS ======================= -->
 <section class="py-5 position-relative">
     <div class="container">
         <div class="row justify-content-center mb-5 fade-in-up">
-            <div class="col-md-8 text-center">
+            <div class="col-md-8 text-center section-header">
+                <span class="eyebrow"><i class="bi bi-heart-pulse"></i>Our Commitment</span>
                 <h2 class="fw-bold h1 mb-3" data-t="index_commitment_h">Our Commitment to You</h2>
                 <p class="text-muted lead" data-t="index_commitment_p">Safe, ethical, and accessible navigation for everyone.</p>
             </div>
         </div>
         <div class="row g-4">
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.1s;">
-                <div class="card glass-card h-100 border-0 p-4">
+                <div class="card glass-card glass-card-hover h-100 border-0 p-4">
                     <div class="feature-icon bg-soft-blue">
                         <i class="bi bi-cpu"></i>
                     </div>
@@ -55,7 +86,7 @@
                 </div>
             </div>
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.2s;">
-                <div class="card glass-card h-100 border-0 p-4">
+                <div class="card glass-card glass-card-hover h-100 border-0 p-4">
                     <div class="feature-icon bg-soft-green">
                         <i class="bi bi-people"></i>
                     </div>
@@ -65,11 +96,11 @@
                 </div>
             </div>
             <div class="col-md-4 fade-in-up" style="animation-delay: 0.3s;">
-                <div class="card glass-card h-100 border-0 p-4">
+                <div class="card glass-card glass-card-hover h-100 border-0 p-4">
                     <div class="feature-icon bg-soft-purple">
                         <i class="bi bi-shield-check"></i>
                     </div>
-                    <h4 class="fw-bold mb-3" data-t="index_ethical_h">Ethical & Safe</h4>
+                    <h4 class="fw-bold mb-3" data-t="index_ethical_h">Ethical &amp; Safe</h4>
                     <p class="text-muted mb-4" data-t="index_ethical_p">We focus on emotional guidance and safety, strictly avoiding medical diagnosis or formal therapy in all interactions.</p>
                     <a href="{{ url_for('contact') }}" class="mt-auto text-decoration-none fw-bold text-secondary" data-t="get_support">Get support</a> <i class="bi bi-arrow-right ms-1"></i>
                 </div>
@@ -78,12 +109,61 @@
     </div>
 </section>
 
-<!-- Call to Action -->
-<section class="py-5 bg-white">
-    <div class="container text-center">
-        <h2 class="mb-4" data-t="index_cta_h">Ready to find some peace?</h2>
-        <p class="mb-5" data-t="index_cta_p">Speak or chat with MindCare Navigator today. We're here to listen.</p>
-        <a href="{{ url_for('chat') }}" class="btn btn-primary btn-lg px-5" data-t="index_cta_btn">Get Started</a>
+<!-- ======================= HOW IT HELPS ======================= -->
+<section class="py-5">
+    <div class="container">
+        <div class="glass p-4 p-lg-5 fade-in-up">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-5">
+                    <span class="eyebrow"><i class="bi bi-signpost-split"></i>Your Path</span>
+                    <h3 class="fw-bold mb-2">Support that meets you where you are</h3>
+                    <p class="text-muted mb-0">Chat when it's easier to type, speak when it's easier to talk, and reach a real psychologist when you're ready.</p>
+                </div>
+                <div class="col-lg-7">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="glass glass-lavender p-3 h-100" style="border-radius: var(--mc-r-lg);">
+                                <i class="bi bi-chat-heart fs-4 text-primary"></i>
+                                <div class="fw-bold mt-2">AI Companion</div>
+                                <small class="text-muted">Empathetic chat with mood-aware responses</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="glass glass-blue p-3 h-100" style="border-radius: var(--mc-r-lg);">
+                                <i class="bi bi-mic fs-4" style="color: var(--mc-cyan);"></i>
+                                <div class="fw-bold mt-2">Voice Conversations</div>
+                                <small class="text-muted">Speak naturally and hear emotional voice replies</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="glass glass-teal p-3 h-100" style="border-radius: var(--mc-r-lg);">
+                                <i class="bi bi-person-check fs-4" style="color: var(--mc-teal);"></i>
+                                <div class="fw-bold mt-2">Psychologist Connect</div>
+                                <small class="text-muted">Request direct chats with available experts</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="glass p-3 h-100" style="border-radius: var(--mc-r-lg); background: rgba(255,255,255,.66);">
+                                <i class="bi bi-geo-alt fs-4 text-primary"></i>
+                                <div class="fw-bold mt-2">Nearby Help</div>
+                                <small class="text-muted">Find psychologists close to your location</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ======================= CALL TO ACTION ======================= -->
+<section class="py-5">
+    <div class="container text-center fade-in-up">
+        <div class="glass p-5" style="border-radius: var(--mc-r-2xl);">
+            <h2 class="mb-3" data-t="index_cta_h">Ready to find some peace?</h2>
+            <p class="mb-4 text-muted" data-t="index_cta_p">Speak or chat with MindCare Navigator today. We're here to listen.</p>
+            <a href="{{ url_for('chat') }}" class="btn btn-gradient btn-lg px-5" data-t="index_cta_btn">Get Started</a>
+        </div>
     </div>
 </section>
 {% endblock %}

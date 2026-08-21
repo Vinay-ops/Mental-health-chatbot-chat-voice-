@@ -1,25 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Chat - MindCare Navigator{% endblock %}
+{% block title %}AI Companion - MindCare Navigator{% endblock %}
 
 {% block content %}
 <div class="mesh-gradient"></div>
 
-<section class="py-4 py-md-5 min-vh-100 d-flex align-items-center">
+<section class="chat-section py-4 py-md-5 d-flex align-items-start" style="min-height: 88vh;">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-10 col-xl-9">
-                <div class="card glass-card border-0 shadow-2xl overflow-hidden">
+                <div class="glass-card glass-strong chat-shell border-0">
                     <!-- Chat Header -->
-                    <div class="card-header bg-transparent border-bottom border-light py-3 px-4">
-                        <div class="row align-items-center g-3">
-                            <div class="col-md-6 text-center text-md-start">
-                                <h4 class="mb-0 fw-bold text-gradient" data-t="chat_header">MindCare Assistant</h4>
-                                <div class="d-flex align-items-center flex-wrap gap-2 mt-2 justify-content-center justify-content-md-start">
-                                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 shadow-sm border" id="sentiment-badge">
-                                        <i class="bi bi-emoji-smile me-1"></i><span data-t="mood_neutral">Neutral</span>
-                                    </span>
-                                    <div class="d-flex align-items-center gap-2 ms-md-2 text-muted small flex-wrap justify-content-center">
+                    <div class="card-header bg-transparent border-bottom py-3 px-4" style="border-color: rgba(140,150,220,.14) !important;">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-3 me-auto">
+                                <div class="ai-icon-container"><i class="bi bi-stars"></i></div>
+                                <div>
+                                    <h4 class="mb-0 fw-bold" style="font-size: 1.15rem;" data-t="chat_header">MindCare Assistant</h4>
+                                    <div class="d-flex align-items-center gap-2 text-muted small flex-wrap" style="font-size: 0.74rem;">
                                         <span><i class="bi bi-shield-check me-1"></i><span data-t="chat_safe">Safe</span></span>
                                         <span class="opacity-50">•</span>
                                         <span data-t="chat_grounded">Grounded</span>
@@ -28,46 +26,47 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="d-flex flex-wrap justify-content-center justify-content-md-end align-items-center gap-2 gap-md-3">
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm border bg-white" id="new-chat-btn">
-                                        <i class="bi bi-plus-lg me-1"></i><span data-t="chat_new">New Chat</span>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <span class="badge rounded-pill px-3 py-2" id="sentiment-badge">
+                                    <i class="bi bi-emoji-smile me-1"></i><span data-t="mood_neutral">Neutral</span>
+                                </span>
+                                <button class="btn btn-soft-indigo btn-sm" id="new-chat-btn">
+                                    <i class="bi bi-plus-lg me-1"></i><span data-t="chat_new">New Chat</span>
+                                </button>
+                                <a href="/psychologist-list" class="btn btn-soft-teal btn-sm" title="Connect with a real psychologist">
+                                    <i class="bi bi-person-check me-1"></i><span>Find Psychologist</span>
+                                </a>
+                                <button class="btn btn-glass btn-sm px-3 py-2" id="history-toggle" data-bs-toggle="offcanvas" data-bs-target="#historySidebar">
+                                    <i class="bi bi-clock-history me-1"></i><span data-t="chat_history">History</span>
+                                </button>
+                            </div>
+                            <div class="w-100 d-flex flex-wrap align-items-center justify-content-center justify-content-sm-between gap-2">
+                                <div class="d-flex p-1 rounded-pill" style="background: rgba(238,240,253,.7); border: 1px solid rgba(255,255,255,.7);">
+                                    <button class="btn mode-btn active btn-sm px-3 rounded-pill" id="mode-chat-btn">
+                                        <i class="bi bi-chat-dots-fill me-1"></i><span data-t="chat_mode_chat">Chat</span>
                                     </button>
-                                    <a href="/psychologist-list" class="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm border bg-white" title="Connect with a real psychologist">
-                                        <i class="bi bi-person-check me-1"></i><span>Find Psychologist</span>
-                                    </a>
-                                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm border bg-white" id="history-toggle" data-bs-toggle="offcanvas" data-bs-target="#historySidebar">
-                                        <i class="bi bi-clock-history me-1"></i><span data-t="chat_history">History</span>
+                                    <button class="btn mode-btn btn-sm px-3 rounded-pill" id="mode-voice-btn">
+                                        <i class="bi bi-mic-fill me-1"></i><span data-t="chat_mode_voice">Voice</span>
                                     </button>
-                                    <div class="mode-toggle-container p-1 bg-light rounded-pill d-flex shadow-inner">
-                                        <button class="btn mode-btn active px-4 py-2 rounded-pill transition-all" id="mode-chat-btn">
-                                            <i class="bi bi-chat-dots-fill me-2"></i><span data-t="chat_mode_chat">Chat</span>
-                                        </button>
-                                        <button class="btn mode-btn px-4 py-2 rounded-pill transition-all" id="mode-voice-btn">
-                                            <i class="bi bi-mic-fill me-2"></i><span data-t="chat_mode_voice">Voice</span>
-                                        </button>
-                                    </div>
-                                    <select class="form-select form-select-sm border-0 bg-light rounded-pill shadow-sm" id="provider-select" style="width: 160px; height: 38px;">
-                                        <option value="groq">Groq (Ultra Fast)</option>
-                                        <option value="gemini">Gemini (Smartest)</option>
-                                        <option value="ollama">Ollama (Local)</option>
-                                        <option value="grok">Grok (X.ai)</option>
-                                    </select>
                                 </div>
+                                <select class="form-select form-select-sm rounded-pill" id="provider-select" aria-label="AI provider">
+                                    <option value="groq">Groq (Ultra Fast)</option>
+                                    <option value="gemini">Gemini (Smartest)</option>
+                                    <option value="ollama">Ollama (Local)</option>
+                                    <option value="grok">Grok (X.ai)</option>
+                                </select>
                             </div>
                         </div>
                     </div>
 
                     <!-- Chat Body -->
-                    <div class="card-body p-0 d-flex flex-column" style="height: 70vh; min-height: 550px;">
+                    <div class="card-body chat-body p-0 d-flex flex-column" style="height: 70vh; min-height: 550px;">
                         <!-- Chat Mode View -->
                         <div id="chat-mode-view" class="h-100 d-flex flex-column overflow-hidden">
-                            <div class="chat-messages flex-grow-1 p-3 p-md-4" id="chat-messages" style="overflow-y: auto; background: rgba(255,255,255,0.2);">
+                            <div class="chat-messages flex-grow-1 p-3 p-md-4" id="chat-messages" style="overflow-y: auto;">
                                 <div class="message message-ai fade-in-up">
                                     <div class="d-flex align-items-start gap-3">
-                                        <div class="ai-icon-container">
-                                            <i class="bi bi-robot"></i>
-                                        </div>
+                                        <div class="ai-icon-container"><i class="bi bi-stars"></i></div>
                                         <div class="message-content" data-t="chat_welcome">
                                             Hello! I'm MindCare Navigator. How are you feeling today? I'm here to listen and guide you to resources.
                                         </div>
@@ -77,37 +76,44 @@
                         </div>
 
                         <!-- Voice Mode View -->
-                        <div id="voice-mode-view" class="h-100 d-flex flex-column align-items-center p-3 p-md-5 text-center" style="display: none !important; background: transparent; overflow-y: auto;">
-                            <div class="voice-status mb-5 mt-2 mt-md-4 w-100">
-                                <div class="recording-visualizer mb-5">
+                        <div id="voice-mode-view" class="voice-stage h-100 p-3 p-md-4 text-center" style="display: none !important; overflow-y: auto;">
+                            <div class="voice-orb-wrap">
+                                <div class="recording-visualizer d-flex align-items-center justify-content-center w-100 h-100">
                                     <div class="pulse-ring"></div>
                                     <div class="pulse-ring delay-1"></div>
-                                    <div class="main-mic-btn shadow-lg">
+                                    <button class="main-mic-btn" type="button" aria-label="Toggle microphone">
                                         <i class="bi bi-mic-fill"></i>
-                                    </div>
+                                    </button>
                                 </div>
-                                <h3 class="fw-bold text-gradient mb-3 px-3 h2" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
-                                <p class="text-muted px-3 lead mb-0" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
                             </div>
-                            
-                            <div class="transcript-box p-4 p-md-5 glass-card shadow-lg w-100 mb-5 border-0 position-relative" style="max-width: 650px; min-height: 140px; background: rgba(255,255,255,0.8) !important; transition: all 0.3s ease;">
-                                <div class="position-absolute top-0 start-50 translate-middle bg-white px-3 py-1 rounded-pill shadow-sm border">
-                                    <span class="text-primary small fw-bold text-uppercase tracking-wider" style="font-size: 0.7rem;" data-t="voice_you_said">You said</span>
-                                </div>
-                                <div id="voice-transcript" class="fs-4 text-dark fw-medium mt-2" style="word-break: break-word; line-height: 1.6;">...</div>
+
+                            <div class="voice-waveform" aria-hidden="true">
+                                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+                                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+                                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
                             </div>
-                            
-                            <div class="ai-reply-box p-4 p-md-5 rounded-5 shadow-2xl w-100 mb-5 border-0 position-relative" style="max-width: 650px; display: none; background: linear-gradient(135deg, var(--primary), var(--secondary)); transition: all 0.3s ease;" id="voice-ai-reply-box">
-                                <div class="position-absolute top-0 start-50 translate-middle bg-white px-3 py-1 rounded-pill shadow-sm border">
-                                    <span class="text-primary small fw-bold text-uppercase tracking-wider" style="font-size: 0.7rem;" data-t="voice_assistant_reply">Assistant</span>
+
+                            <h3 class="fw-bold mb-1 px-3" style="font-size: 1.35rem; color: var(--mc-navy);" id="voice-status-text" data-t="voice_click_to_start">Click to start speaking</h3>
+                            <p class="text-muted px-3 mb-4" style="font-size: 0.92rem;" id="voice-hint" data-t="voice_hint">I'm listening to your feelings and will respond once you finish.</p>
+
+                            <div class="transcript-box glass p-4 w-100 mb-3 position-relative" style="max-width: 620px; min-height: 110px;">
+                                <div class="position-absolute top-0 start-50 translate-middle px-3 py-1 rounded-pill" style="background: rgba(255,255,255,.9); border: 1px solid var(--mc-glass-border); box-shadow: var(--mc-shadow-sm);">
+                                    <span class="small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: .06em; color: var(--mc-indigo-deep);" data-t="voice_you_said">You said</span>
                                 </div>
-                                <div id="voice-ai-reply" class="fs-4 text-white fw-medium mt-2" style="word-break: break-word; line-height: 1.6;">...</div>
+                                <div id="voice-transcript" class="fs-5 fw-medium mt-2" style="word-break: break-word; line-height: 1.6; color: var(--mc-navy);">...</div>
+                            </div>
+
+                            <div class="glass glass-lavender p-4 w-100 mb-2 position-relative" style="max-width: 620px; display: none; border-radius: var(--mc-r-xl);" id="voice-ai-reply-box">
+                                <div class="position-absolute top-0 start-50 translate-middle px-3 py-1 rounded-pill" style="background: rgba(255,255,255,.9); border: 1px solid var(--mc-glass-border); box-shadow: var(--mc-shadow-sm);">
+                                    <span class="small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: .06em; color: var(--mc-indigo-deep);" data-t="voice_assistant_reply">Assistant</span>
+                                </div>
+                                <div id="voice-ai-reply" class="fs-5 fw-medium mt-2" style="word-break: break-word; line-height: 1.6; color: var(--mc-navy);">...</div>
                             </div>
                         </div>
 
                         <!-- Typing Indicator -->
                         <div class="typing-indicator px-4 py-2" id="typing-indicator" style="display: none;">
-                            <div class="bg-white px-3 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 border">
+                            <div class="px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2" style="background: rgba(255,255,255,.85); border: 1px solid var(--mc-glass-border); box-shadow: var(--mc-shadow-sm);">
                                 <span class="typing-dot"></span>
                                 <span class="typing-dot"></span>
                                 <span class="typing-dot"></span>
@@ -115,27 +121,27 @@
                             </div>
                         </div>
 
-                        <!-- Quick Actions -->
+                        <!-- Suggested Prompts -->
                         <div class="quick-actions px-3 px-md-4 pb-3 d-flex flex-nowrap gap-2 overflow-x-auto" id="quick-actions" style="scrollbar-width: none; -ms-overflow-style: none;">
                             <style>.quick-actions::-webkit-scrollbar { display: none; }</style>
-                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_stress">I'm feeling stressed</button>
-                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_resources">Need local resources</button>
-                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_breathing">Breathing exercises</button>
-                            <button class="btn btn-white btn-sm rounded-pill action-chip flex-shrink-0 border shadow-sm px-3" data-t="chat_action_how">How does this work?</button>
+                            <button class="btn action-chip flex-shrink-0" data-t="chat_action_stress">I'm feeling stressed</button>
+                            <button class="btn action-chip flex-shrink-0" data-t="chat_action_resources">Need local resources</button>
+                            <button class="btn action-chip flex-shrink-0" data-t="chat_action_breathing">Breathing exercises</button>
+                            <button class="btn action-chip flex-shrink-0" data-t="chat_action_how">How does this work?</button>
                         </div>
 
-                        <!-- Chat Input Area -->
-                        <div class="chat-input-area p-3 p-md-4 bg-transparent border-top border-light" id="chat-input-area">
-                            <div class="input-group gap-3 align-items-center bg-white p-2 rounded-pill shadow-lg border">
-                                <input type="text" class="form-control border-0 bg-transparent px-4 py-3 chat-input" id="user-input" placeholder="Type your message here..." autocomplete="off" data-t="chat_placeholder">
-                                <button class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" id="send-btn" style="width: 54px; height: 54px;">
-                                    <i class="bi bi-send-fill fs-5"></i>
+                        <!-- Message Composer -->
+                        <div class="chat-input-area p-3 p-md-4 bg-transparent" id="chat-input-area" style="border-top: 1px solid rgba(140,150,220,.12);">
+                            <div class="composer-pill">
+                                <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off" aria-label="Message" data-t="chat_placeholder">
+                                <button class="composer-send" id="send-btn" aria-label="Send message">
+                                    <i class="bi bi-send-fill"></i>
                                 </button>
                             </div>
                         </div>
-                        
-                        <div class="text-center pb-3">
-                            <small class="text-muted" style="font-size: 0.75rem;" data-t="chat_footer_info">
+
+                        <div class="chat-footer-note text-center pb-3">
+                            <small class="text-muted" style="font-size: 0.73rem;" data-t="chat_footer_info">
                                 <i class="bi bi-info-circle me-1"></i>Safe AI Support • Non-Diagnostic • Localized for you
                             </small>
                         </div>
@@ -147,28 +153,28 @@
 </section>
 
 <!-- History Sidebar (Offcanvas) -->
-<div class="offcanvas offcanvas-start glass-card border-0 shadow-lg" tabindex="-1" id="historySidebar" aria-labelledby="historySidebarLabel" style="width: 320px; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px);">
-    <div class="offcanvas-header border-bottom border-light py-4">
-        <h5 class="offcanvas-title fw-bold text-gradient" id="historySidebarLabel">
-            <i class="bi bi-clock-history me-2"></i>Chat History
+<div class="offcanvas offcanvas-start border-0" tabindex="-1" id="historySidebar" aria-labelledby="historySidebarLabel" style="width: 320px; background: rgba(255,255,255,0.92); backdrop-filter: blur(24px); border-radius: 0 var(--mc-r-xl) var(--mc-r-xl) 0;">
+    <div class="offcanvas-header py-4" style="border-bottom: 1px solid rgba(140,150,220,.14);">
+        <h5 class="offcanvas-title fw-bold" id="historySidebarLabel">
+            <i class="bi bi-clock-history me-2 text-primary"></i>Chat History
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-0">
-        <div id="history-loading" class="text-center py-5" style="display: none;">
-            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+        <div id="history-loading" class="state-block" style="display: none;">
+            <div class="loading-orb"></div>
             <p class="small text-muted mt-2">Loading sessions...</p>
         </div>
-        <div id="history-empty" class="text-center py-5 px-4" style="display: none;">
-            <i class="bi bi-chat-dots fs-1 text-muted opacity-25"></i>
+        <div id="history-empty" class="state-block" style="display: none;">
+            <i class="bi bi-chat-dots"></i>
             <p class="small text-muted mt-2">No past conversations found. Start a new one!</p>
         </div>
         <div class="list-group list-group-flush" id="sessions-list">
             <!-- Sessions will be loaded here -->
         </div>
     </div>
-    <div class="offcanvas-footer p-3 border-top border-light">
-        <button class="btn btn-primary w-100 rounded-pill" id="sidebar-new-chat">
+    <div class="offcanvas-footer p-3" style="border-top: 1px solid rgba(140,150,220,.14);">
+        <button class="btn btn-gradient w-100" id="sidebar-new-chat">
             <i class="bi bi-plus-lg me-1"></i>New Conversation
         </button>
     </div>
@@ -182,100 +188,17 @@
     cursor: pointer;
 }
 .history-item:hover {
-    background: rgba(99, 102, 241, 0.05);
-    border-left-color: var(--primary);
+    background: rgba(108, 119, 232, 0.06);
+    border-left-color: var(--mc-indigo);
 }
 .history-item.active {
-    background: rgba(99, 102, 241, 0.1);
-    border-left-color: var(--primary);
+    background: var(--mc-lavender-soft);
+    border-left-color: var(--mc-indigo);
 }
-.history-date { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.history-preview { font-size: 0.85rem; color: var(--text-main); font-weight: 500; }
-.tracking-wider { letter-spacing: 0.05em; }
-</style>
+.history-date { font-size: 0.7rem; color: var(--mc-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.history-preview { font-size: 0.85rem; color: var(--mc-navy); font-weight: 500; }
 
-<style>
-.btn-white { background: white; color: var(--text-main); transition: all 0.2s; }
-.btn-white:hover { background: var(--primary); color: white; border-color: var(--primary); }
-
-.recording-visualizer {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    margin: 0 auto;
-}
-.main-mic-btn {
-    width: 120px;
-    height: 120px;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 3rem;
-    position: relative;
-    z-index: 2;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.main-mic-btn:hover { transform: scale(1.05); }
-.main-mic-btn:active { transform: scale(0.95); }
-
-.pulse-ring {
-    position: absolute;
-    top: -10px; left: -10px; right: -10px; bottom: -10px;
-    border: 2px solid var(--primary);
-    border-radius: 50%;
-    opacity: 0;
-}
-.is-recording .pulse-ring {
-    animation: pulse 2.5s cubic-bezier(0.12, 0, 0.39, 0) infinite;
-}
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(2.2); opacity: 0; }
-}
-</style>
-
-<style>
-.recording-visualizer {
-    position: relative;
-    width: 100px;
-    height: 100px;
-    margin: 0 auto;
-}
-.main-mic-btn {
-    width: 100px;
-    height: 100px;
-    background: var(--bs-primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 2.5rem;
-    position: relative;
-    z-index: 2;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-.main-mic-btn:active { transform: scale(0.9); }
-.pulse-ring {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    border: 4px solid var(--bs-primary);
-    border-radius: 50%;
-    opacity: 0;
-}
-.is-recording .pulse-ring {
-    animation: pulse 2s infinite;
-}
-.delay-1 { animation-delay: 0.5s !important; }
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.5; }
-    100% { transform: scale(1.8); opacity: 0; }
-}
+.mode-toggle-seg { background: rgba(238,240,253,.7); }
 </style>
 {% endblock %}
 

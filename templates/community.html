@@ -5,16 +5,17 @@
 {% block content %}
 <div class="mesh-gradient"></div>
 
-<section class="py-5 min-vh-100 d-flex align-items-center">
+<section class="py-5 min-vh-100">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-9">
-                <div class="card glass-card border-0 shadow-2xl">
-                    <div class="card-header bg-transparent border-bottom border-light py-3 px-4 d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0 fw-bold text-gradient" data-t="community_title">Community Support Wall</h4>
-                        <span class="badge bg-soft-blue text-primary rounded-pill px-3 py-2" data-t="community_badge">Anonymous, peer-support messages</span>
-                    </div>
-                    <div class="card-body p-4">
+                <div class="section-header text-center mb-4 fade-in-up">
+                    <span class="eyebrow" data-t="community_badge">Anonymous, peer-support messages</span>
+                    <h2 class="fw-bold mb-2" data-t="community_title">Community Support Wall</h2>
+                    <p class="text-muted mx-auto mb-0" style="max-width: 520px;" data-t="community_footer">This space is for encouragement and shared feelings, not crisis support or medical advice.</p>
+                </div>
+                <div class="card glass-card glass-strong border-0 shadow-lg fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="card-body p-4 p-md-5">
                         <div class="mb-4">
                             <label class="form-label small fw-semibold text-muted" data-t="community_name_label">Name (optional)</label>
                             <input type="text" class="form-control" id="community-name" data-t="community_name_placeholder" placeholder="You can stay Anonymous">
@@ -29,12 +30,9 @@
                             </button>
                         </div>
                         <div id="community-feedback" class="small mb-3"></div>
-                        <hr>
+                        <hr class="opacity-25">
                         <h6 class="fw-semibold mb-3" data-t="community_recent">Recent messages</h6>
-                        <div id="community-posts" style="max-height: 420px; overflow-y: auto;"></div>
-                    </div>
-                    <div class="card-footer bg-transparent border-top border-light text-center small text-muted py-3">
-                        <span data-t="community_footer">This space is for encouragement and shared feelings, not crisis support or medical advice.</span>
+                        <div id="community-posts" class="community-scroll"></div>
                     </div>
                 </div>
             </div>
@@ -68,19 +66,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 postsContainer.innerHTML = `<div class="text-muted">${t('community_no_messages')}</div>`;
                 return;
             }
-            postsContainer.innerHTML = posts.map(p => `
-                <div class="border rounded-3 p-3 mb-3 bg-white bg-opacity-75" data-post-id="${p.id}">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-semibold">${p.name}</span>
-                        <span class="text-muted small">${new Date(p.created_at).toLocaleString()}</span>
+            postsContainer.innerHTML = posts.map(p => {
+                const displayName = p.name || 'Anonymous';
+                const initial = (displayName.trim().charAt(0) || 'A').toUpperCase();
+                return `
+                <div class="community-post" data-post-id="${p.id}">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="community-avatar" aria-hidden="true">${initial}</div>
+                        <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                            <span class="post-name">${displayName}</span>
+                            <span class="post-time">${new Date(p.created_at).toLocaleString()}</span>
+                        </div>
                     </div>
-                    <div class="text-muted mb-2">${p.content}</div>
+                    <div class="post-content">${p.content}</div>
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill community-like-btn">
                         <i class="bi bi-heart-fill me-1"></i>
                         <span class="community-like-count">${p.likes || 0}</span>
                     </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             attachLikeHandlers();
         } catch (e) {

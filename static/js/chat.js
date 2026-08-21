@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.innerHTML = `
                 <div class="message message-ai fade-in-up">
                     <div class="d-flex align-items-start gap-3">
-                        <div class="ai-icon-container"><i class="bi bi-robot"></i></div>
+                        <div class="ai-icon-container"><i class="bi bi-stars"></i></div>
                         <div class="message-content" data-t="chat_welcome">${t('chat_welcome')}</div>
                     </div>
                 </div>
@@ -195,6 +195,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Voice stage visuals (listening / thinking / speaking) ---
+    function setVoiceStage(stage) {
+        if (!voiceModeView) return;
+        voiceModeView.classList.remove('voice-stage-listening', 'voice-stage-thinking', 'voice-stage-speaking');
+        if (stage && stage !== 'idle') {
+            voiceModeView.classList.add(`voice-stage-${stage}`);
+        }
+        if (stage === 'listening' || stage === 'speaking') {
+            voiceModeView.classList.add('voice-active');
+        } else {
+            voiceModeView.classList.remove('voice-active');
+        }
+        if (voiceStatusText) {
+            voiceStatusText.classList.remove('voice-state-listening', 'voice-state-thinking', 'voice-state-speaking');
+            if (stage === 'listening') voiceStatusText.classList.add('voice-state-listening');
+            if (stage === 'thinking') voiceStatusText.classList.add('voice-state-thinking');
+            if (stage === 'speaking') voiceStatusText.classList.add('voice-state-speaking');
+        }
+    }
+
     // --- Helper for Dynamic Translations ---
     function t(key) {
         const lang = localStorage.getItem('selectedLanguage') || 'en';
@@ -312,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageDiv.classList.add('message-ai');
             messageDiv.innerHTML = `
                 <div class="d-flex align-items-start gap-3">
-                    <div class="ai-icon-container"><i class="bi bi-robot"></i></div>
+                    <div class="ai-icon-container"><i class="bi bi-stars"></i></div>
                     <div>
                         <div class="message-content">${text}</div>
                         <div class="d-flex gap-2 mt-2">
@@ -421,6 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 audio.onended = () => {
                     if (source === 'voice') {
+                        setVoiceStage('idle');
                         voiceStatusText.textContent = t('voice_click_to_start');
                     }
                     URL.revokeObjectURL(audioUrl);
@@ -456,6 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             } else if (source === 'voice') {
+                setVoiceStage('idle');
                 voiceStatusText.textContent = t('voice_click_to_start');
             }
         }
@@ -506,6 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.onstart = () => {
             isRecording = true;
             recordingVisualizer.classList.add('is-recording');
+            setVoiceStage('listening');
             voiceStatusText.textContent = t('chat_listening');
             voiceTranscript.textContent = "...";
             voiceAiReplyBox.style.display = 'none';
@@ -546,6 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             isRecording = false;
             recordingVisualizer.classList.remove('is-recording');
+            setVoiceStage('idle');
             voiceStatusText.textContent = t('voice_click_to_start');
         }
     }
@@ -583,11 +607,13 @@ document.addEventListener('DOMContentLoaded', () => {
         addChatMessage(text, true);
         
         voiceStatusText.textContent = "...";
+        setVoiceStage('thinking');
         typingIndicator.style.display = 'block';
         
         const response = await fetchAIResponse(text);
         
         typingIndicator.style.display = 'none';
+        setVoiceStage('speaking');
         voiceStatusText.textContent = ""; 
         voiceAiReply.textContent = response;
         voiceAiReplyBox.style.display = 'block';
@@ -652,6 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         utter.onend = () => {
             if (currentMode === 'voice') {
+                setVoiceStage('idle');
                 voiceStatusText.textContent = t('voice_click_to_start');
             }
         };
