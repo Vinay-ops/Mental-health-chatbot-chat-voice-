@@ -454,6 +454,19 @@ a:hover { color: var(--mc-indigo-deep); }
     box-shadow: var(--mc-shadow);
 }
 
+/* Bootstrap's .btn.active leaves --bs-btn-active-border-color undefined,
+   which computes to currentColor (navy) — restyle active glass buttons */
+.btn-glass.active,
+.btn-glass:active {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(165, 174, 245, 0.55);
+    color: var(--mc-indigo-deep);
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.btn-gradient.active,
+.btn-gradient:active { border-color: transparent; }
+
 .btn-soft-indigo {
     background: var(--mc-lavender-soft);
     color: var(--mc-indigo-deep);
@@ -779,6 +792,17 @@ input::placeholder, textarea::placeholder { color: var(--mc-muted); opacity: 0.8
 
 /* Hide native radios inside role tiles but keep keyboard focus visible */
 .role-selector .form-check { padding-left: 0; margin-bottom: 0; }
+
+/* Bootstrap's flex-fill keeps flex-basis:auto, so each tile sizes to its
+   text and the selected background covers only part of the row.
+   flex-basis:0 forces an even 50/50 split (needs !important to beat
+   Bootstrap's `flex: 1 1 auto !important` utility). */
+.role-selector .form-check { flex: 1 1 0 !important; min-width: 0; }
+
+/* Labels are inline by default, which shrinks tiles to their content and
+   leaves the selected tile's background covering only part of the row.
+   Block-level labels let each tile fill its half of the selector evenly. */
+.role-selector .form-check-label { display: block; }
 
 .role-selector .form-check-input {
     position: absolute;
