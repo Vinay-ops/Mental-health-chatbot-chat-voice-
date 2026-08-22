@@ -3,86 +3,133 @@
 {% block title %}Register - MindCare Navigator{% endblock %}
 
 {% block content %}
-<div class="mesh-gradient"></div>
+    <main class="auth-wrapper">
+        <div class="auth-split-card">
 
-<section class="auth-section py-5 min-vh-100 d-flex align-items-center">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-7 col-lg-5">
-                <div class="card glass-card border-0 shadow-2xl p-4 p-md-5">
-                    <div class="text-center mb-5">
-                        <div class="feature-icon bg-soft-purple mx-auto mb-4">
-                            <i class="bi bi-person-plus"></i>
+            <!-- ===== LEFT PANEL ===== -->
+            <div class="auth-left">
+                <div class="auth-left-orb-mid" aria-hidden="true"></div>
+
+                <div class="auth-left-top">
+                    <!-- Logo -->
+                    <div class="auth-left-logo">
+                        <span class="logo-orb" aria-hidden="true"></span>
+                        <div>
+                            <span>MindCare Navigator</span>
+                            <small>MENTAL WELLNESS PLATFORM</small>
                         </div>
-                        <h2 class="fw-bold h1 text-gradient" data-t="register_title">Create Account</h2>
-                        <p class="text-muted" data-t="register_subtitle">Join MindCare for personalized support</p>
                     </div>
-                    <form id="registerForm">
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-uppercase text-muted">Register As</label>
-                            <div class="role-selector d-flex gap-3 mb-3">
-                                <div class="form-check flex-fill">
-                                    <input class="form-check-input" type="radio" name="userRole" id="userRole" value="user" checked>
-                                    <label class="form-check-label w-100" for="userRole">
-                                        <div class="role-tile selected">
-                                            <i class="bi bi-person"></i>
-                                            <div class="role-tile-label">User</div>
-                                        </div>
-                                    </label>
-                                </div>
-                                <div class="form-check flex-fill">
-                                    <input class="form-check-input" type="radio" name="userRole" id="psychologistRole" value="psychologist">
-                                    <label class="form-check-label w-100" for="psychologistRole">
-                                        <div class="role-tile">
-                                            <i class="bi bi-person-check"></i>
-                                            <div class="role-tile-label">Psychologist</div>
-                                        </div>
-                                    </label>
-                                </div>
+
+                    <!-- Badge -->
+                    <div class="auth-badge">
+                        <i class="bi bi-brain"></i>
+                        MINDCARE WORKSPACE
+                    </div>
+
+                    <!-- Heading -->
+                    <h2>Your Mental Wellness<br>Journey Starts Here</h2>
+                    <p class="auth-left-sub">AI-powered mental health support. Connect with licensed psychologists and join a caring, judgment-free community.</p>
+
+                    <!-- Feature card -->
+                    <div class="auth-feature-card">
+                        <div class="fc-header">
+                            <div class="fc-icon"><i class="bi bi-shield-heart"></i></div>
+                            <div>
+                                <div class="fc-title">MINDCARE HUB</div>
+                                <div class="fc-sub">Safe & private authenticated access</div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="name" class="form-label small fw-bold text-uppercase text-muted" data-t="register_name">Full Name</label>
-                            <input type="text" class="form-control" id="name" placeholder="John Doe" data-t="register_name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label small fw-bold text-uppercase text-muted" data-t="register_email">Email Address</label>
-                            <input type="email" class="form-control" id="email" placeholder="name@example.com" data-t="register_email" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="password" class="form-label small fw-bold text-uppercase text-muted" data-t="register_password">Password</label>
-                            <input type="password" class="form-control" id="password" placeholder="••••••••" data-t="register_password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 py-3 shadow-lg mb-4" data-t="register_btn">Register</button>
-                    </form>
-                    <div class="text-center">
-                        <p class="mb-0 text-muted"><span data-t="register_footer">Already have an account?</span> <a href="{{ url_for('login_page') }}" class="text-primary fw-bold text-decoration-none ms-1" data-t="register_link">Sign in here</a></p>
+                        <ul class="auth-feature-list">
+                            <li><i class="bi bi-check-circle-fill"></i> AI Companion available 24/7</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Connect with licensed psychologists</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Voice &amp; chat modes supported</li>
+                        </ul>
                     </div>
                 </div>
+
+                <div class="auth-left-footer">
+                    &copy; 2026 MindCare Navigator &nbsp;·&nbsp; Mental Health SaaS
+                </div>
+            </div>
+
+            <!-- ===== RIGHT PANEL ===== -->
+            <div class="auth-right">
+
+                <!-- Small logo repeat -->
+                <div class="auth-right-logo">
+                    <div class="logo-orb-sm"></div>
+                    <span class="brand-name">MindCare Navigator</span>
+                </div>
+
+                <h1>Create Account 👋</h1>
+                <p class="auth-right-sub">Join MindCare for personalized support.</p>
+
+                <form id="registerForm">
+                    <!-- Role Selection -->
+                    <label class="form-label mb-2">Register As...</label>
+                    <div class="role-selector">
+                        <div class="role-option selected" onclick="selectRole('user')" id="userRole">
+                            <i class="bi bi-person-heart"></i>
+                            <strong>User</strong>
+                            <p>Seeking support</p>
+                            <input type="radio" name="userRole" value="user" checked style="display:none;">
+                        </div>
+                        <div class="role-option" onclick="selectRole('psychologist')" id="psychologistRole">
+                            <i class="bi bi-stethoscope"></i>
+                            <strong>Psychologist</strong>
+                            <p>Providing care</p>
+                            <input type="radio" name="userRole" value="psychologist" style="display:none;">
+                        </div>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" autocomplete="off" placeholder="Your full name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" autocomplete="off" placeholder="you@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="text-danger small d-none mb-2" id="error"></div>
+
+                    <button type="submit" class="auth-submit-btn" id="submitBtn">
+                        <i class="bi bi-person-plus me-2"></i>Create Account
+                    </button>
+                </form>
+
+                <p class="auth-switch-link">
+                    Already have an account? <a href="{{ url_for('login_page') }}">Sign In</a>
+                </p>
+
+                <div class="auth-right-footer">
+                    &copy; 2026 All rights reserved &middot; MindCare Navigator
+                </div>
+
             </div>
         </div>
-    </div>
-</section>
+    </main>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Handle role selection UI
-    document.querySelectorAll('input[name="userRole"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.querySelectorAll('.form-check-label').forEach(label => {
-                const div = label.querySelector('div');
-                if (this.checked && label.htmlFor === this.id) {
-                    div.classList.add('selected');
-                } else {
-                    div.classList.remove('selected');
-                }
-            });
-        });
-    });
-
-    // Trigger initial styling
-    document.getElementById('userRole').dispatchEvent(new Event('change'));
+    function selectRole(role) {
+        document.getElementById('userRole').classList.remove('selected');
+        document.getElementById('psychologistRole').classList.remove('selected');
+        
+        if (role === 'user') {
+            document.getElementById('userRole').classList.add('selected');
+            document.querySelector('input[name="userRole"][value="user"]').checked = true;
+        } else {
+            document.getElementById('psychologistRole').classList.add('selected');
+            document.querySelector('input[name="userRole"][value="psychologist"]').checked = true;
+        }
+    }
 
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -102,7 +149,6 @@
                 localStorage.setItem('authToken', data.token);
                 localStorage.setItem('userName', data.name);
                 localStorage.setItem('userType', data.user_type || selectedRole);
-                alert('You have registered successfully');
                 
                 // Route based on user type
                 const userType = data.user_type || selectedRole;
@@ -112,11 +158,15 @@
                     window.location.href = '/chat';
                 }
             } else {
-                alert(data.error || 'Registration failed');
+                const errEl = document.getElementById('error');
+                errEl.textContent = data.error || 'Registration failed';
+                errEl.classList.remove('d-none');
             }
         } catch (err) {
             console.error(err);
-            alert('Something went wrong. Please try again.');
+            const errEl = document.getElementById('error');
+            errEl.textContent = 'Something went wrong. Please try again.';
+            errEl.classList.remove('d-none');
         }
     });
 </script>
