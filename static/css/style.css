@@ -256,7 +256,7 @@ a:hover { color: var(--mc-indigo-deep); }
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 28px 8px 16px;
+    padding: 8px 40px 8px 24px;
     background: var(--mc-glass-bg-strong);
     -webkit-backdrop-filter: blur(24px) saturate(170%);
     backdrop-filter: blur(24px) saturate(170%);
