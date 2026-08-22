@@ -179,8 +179,16 @@
             const users = document.querySelectorAll('.auth-user');
 
             if (token) {
-                guests.forEach(el => el.style.display = 'none');
-                users.forEach(el => el.style.display = 'block');
+                // Hide all guest buttons with !important to override Bootstrap utilities
+                guests.forEach(el => {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.visibility = 'hidden';
+                });
+                // Show user avatar/dropdown — use 'flex' since it's a flex container
+                users.forEach(el => {
+                    el.style.setProperty('display', 'flex', 'important');
+                    el.style.visibility = 'visible';
+                });
 
                 // Decode token to get email
                 const decoded = decodeJWT(token);
@@ -207,8 +215,15 @@
                 if (userNameDropdown && userName) userNameDropdown.textContent = userName;
                 if (userEmailDropdown && userEmail) userEmailDropdown.textContent = userEmail;
             } else {
-                guests.forEach(el => el.style.display = '');
-                users.forEach(el => el.style.display = 'none');
+                // Show guest buttons, hide user section
+                guests.forEach(el => {
+                    el.style.removeProperty('display');
+                    el.style.visibility = '';
+                });
+                users.forEach(el => {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.visibility = 'hidden';
+                });
             }
         }
 
