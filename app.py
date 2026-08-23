@@ -10,7 +10,8 @@ for _name in ("MutableMapping", "Mapping", "Sequence", "Iterable", "Callable"):
     if not hasattr(collections, _name):
         setattr(collections, _name, getattr(collections.abc, _name))
 
-from flask import Flask, jsonify, request, render_template
+import os
+from flask import Flask, jsonify, request, render_template, send_from_directory
 
 import backend.database.db as db
 from backend.config import FLASK_DEBUG, SERVER_PORT
@@ -20,7 +21,12 @@ from backend.routes import auth_bp, chat_bp, psychologist_bp, community_bp
 # App factory
 # ---------------------------------------------------------------------------
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="")
+
+# Explicit static file route (needed for Vercel serverless)
+@app.route("/static/<path:filename>")
+def serve_static(filename):
+    return send_from_directory(os.path.join(app.root_path, "static"), filename)
 
 # Register API blueprints (no URL prefix)
 app.register_blueprint(auth_bp)
