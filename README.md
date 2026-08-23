@@ -1,75 +1,152 @@
-# 🌟 MindCare Navigator: The Future of Empathetic AI 🧠
+# 🌟 MindCare Navigator
 
-[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://mental-health-chatbot-chat-voice-a9my1wzz0-vinay-ops-projects.vercel.app/)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-Framework-lightgrey?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
-[![Supabase](https://img.shields.io/badge/Database-Supabase-green?style=for-the-badge&logo=supabase)](https://supabase.com/)
+> **"Your mental health is a priority. Your happiness is essential. Your self-care is a necessity."**
 
-> **"Your mental health is a priority. Your happiness is an essential. Your self-care is a necessity."**
-
-MindCare Navigator isn't just another chatbot. It's a **compassionate, voice-enabled AI companion** designed to bridge the gap in global mental health support. Built with cutting-edge tech and a heart for humanity, we're making professional-grade emotional guidance accessible to everyone, everywhere.
+MindCare Navigator is a **compassionate, voice-enabled AI companion** for mental health support. Built with Flask + Supabase, powered by Groq/Gemini/Grok AI providers.
 
 ---
 
-## 🚀 Why We're Going Viral
+## ✨ Features
 
-🔥 **Voice-First Empathy**: Don't just type. Talk. Our AI listens to your voice and responds with a slow, calming, emotional tone that actually feels human.
-🌍 **Hyper-Localized**: Support in **English, Hindi, and Marathi**. Because healing happens best in your mother tongue.
-📍 **Smart Locator**: Instantly find verified psychologists and mental health clinics in your city (Mumbai, Delhi, Pune, and more!).
-🤝 **Safe Community**: Share your journey anonymously on our Community Wall. You're never alone.
-⚡ **Ultra-Fast AI**: Powered by **Groq, Gemini, and Grok** for instant, grounded, and safe responses.
+- 🎙️ **Voice-First Empathy** — AI responds with calming, emotional tones via Fish Audio TTS
+- 🌍 **Multi-language** — English, Hindi, Marathi support
+- 📍 **Psychologist Locator** — Find verified mental health professionals via OpenStreetMap
+- 🤝 **Community Wall** — Share your journey anonymously
+- 🤖 **Multi-AI Fallback** — Groq → Gemini → Grok → Ollama (local) → canned responses
+- 🔐 **Secure Auth** — JWT + bcrypt password hashing
+- 💬 **Direct Messaging** — Users ↔ Psychologists real-time chat
 
 ---
 
-## 🛠️ The Tech Behind the Magic
+## 🛠️ Tech Stack
 
 | Layer | Technology |
-| :--- | :--- |
-| **Backend** | Python Flask (Robust & Scalable) |
-| **Frontend** | Glassmorphism UI + Bootstrap 5 (Calming Aesthetic) |
-| **Database** | Supabase / PostgreSQL (Real-time & Secure) |
-| **AI Engine** | RAG-Grounded LLMs (Groq, Gemini, Grok) |
-| **Auth** | Secure JWT & Bcrypt Hashing |
-| **Voice** | **Fish Audio** (High-Fidelity) / Google Neural2 / pyttsx3 |
+|:---|:---|
+| **Backend** | Python Flask |
+| **Database** | Supabase (PostgreSQL) |
+| **AI** | Groq, Gemini, Grok, Ollama |
+| **Auth** | JWT + bcrypt |
+| **Voice** | Fish Audio TTS |
+| **Frontend** | HTML5 + Bootstrap 5 + Glassmorphism CSS |
 
 ---
 
-## 📂 Inside the Repository
+## 📂 Project Structure
 
-- **`app.py`**: The brain of the operation. Handles AI routing and API logic.
-- **`db.py`**: Seamless integration with Supabase for user data and logs.
-- **`static/js/chat.js`**: The magic behind the voice and chat interactions.
-- **`templates/`**: Beautiful, accessible HTML5 templates with a modern look.
+```
+.
+├── app.py                  # Flask entry point (blueprint registration)
+├── db.py                   # Database layer (Supabase operations)
+├── supabase_client.py      # Supabase PostgreSQL client
+├── tts_service.py          # Fish Audio TTS integration
+├── requirements.txt        # Python dependencies
+├── vercel.json             # Vercel deployment config
+├── .env.example            # Environment variables template
+├── quickstart_test.py      # API integration test script
+├── SUPABASE_SETUP.sql      # Database schema reference
+│
+├── backend/                # Application logic
+│   ├── config.py           #   Centralized configuration
+│   ├── helpers.py          #   JWT, passwords, text processing
+│   ├── ai/
+│   │   └── providers.py    #   AI provider implementations
+│   └── routes/
+│       ├── auth.py         #   Register + login
+│       ├── chat.py         #   AI chat, TTS, history
+│       ├── psychologist.py #   Psych features, messaging, locator
+│       ├── community.py    #   Community posts + likes
+│       └── pages.py        #   HTML page routes
+│
+├── templates/              # Jinja2 HTML templates
+├── static/
+│   ├── css/style.css       #   Custom styles
+│   └── js/                 #   Chat JS, translations
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/Vinay-ops/Mental-health-chatbot-chat-voice-.git
+cd Mental-health-chatbot-chat-voice-
+pip install -r requirements.txt
+```
+
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+# Edit .env with your keys (at minimum: DATABASE_URL + one AI provider key)
+```
+
+### 3. Run
+
+```bash
+python app.py
+# → http://localhost:8002
+```
+
+### 4. Test
+
+```bash
+python quickstart_test.py
+```
 
 ---
 
-## 🚦 Quick Start
+## 🔑 Environment Variables
 
-1.  **Clone the Vibe**:
-    ```bash
-    git clone https://github.com/Vinay-ops/Mental-health-chatbot-chat-voice-.git
-    ```
-2.  **Fuel Up**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Launch**:
-    ```bash
-    python app.py
-    ```
+| Variable | Required | Description |
+|:---|:---|:---|
+| `DATABASE_URL` | ✅ | Supabase PostgreSQL connection string |
+| `GROQ_API_KEY` | ⭐ | Groq API key (fastest) |
+| `GEMINI_API_KEY` | ⭐ | Google Gemini API key |
+| `XAI_API_KEY` | ⭐ | xAI Grok API key |
+| `FISH_AUDIO_API_KEY` | ❌ | Fish Audio TTS key (for voice) |
+| `JWT_SECRET` | ✅ | Secret for JWT tokens (change in prod!) |
+
+At least one AI provider key is needed for chat to work.
 
 ---
 
-## 🛡️ Safety First
+## 🚢 Deploy to Vercel
 
-MindCare Navigator is a **non-diagnostic** support tool. We focus on grounding, emotional guidance, and professional referrals. 
-**If you are in an immediate crisis, please call your local emergency services.**
+This project is pre-configured for Vercel deployment.
+
+### Option A: Git-based (recommended)
+
+1. Push to GitHub
+2. Go to [vercel.com/new](https://vercel.com/new)
+3. Import your GitHub repo
+4. Vercel auto-detects the Python project via `vercel.json`
+5. **Add environment variables** in the Vercel dashboard (same as `.env`)
+6. Deploy
+
+### Option B: CLI
+
+```bash
+npm i -g vercel
+vercel login
+vercel          # Follow prompts
+vercel --prod   # Deploy to production
+```
+
+### ⚠️ Important Vercel Notes
+
+- **No local DB on Vercel** — You must use a remote Supabase/PostgreSQL database (`DATABASE_URL`)
+- **In-memory session store** resets between requests on Vercel — for persistent sessions, use Supabase tables
+- **Cold starts** may take 5-10s on the free tier
+- Set all API keys in the Vercel dashboard, not in `.env`
 
 ---
 
-## 🌈 Join the Movement
+## 🛡️ Safety
 
-We're on a mission to democratize mental health support. Star this repo ⭐, fork it, and let's build a kinder world together.
+MindCare Navigator is a **non-diagnostic** support tool. It provides grounding, emotional guidance, and professional referrals. **If you are in an immediate crisis, please call your local emergency services.**
 
 ---
+
 *Built with ❤️ by [Vinay Bhogal](https://github.com/Vinay-ops)*
