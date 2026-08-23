@@ -995,9 +995,18 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (!response.ok) throw new Error('Failed to load requests');
-
                 const data = await response.json();
+                if (!response.ok) {
+                    const msg = data.error || 'Access denied';
+                    document.getElementById('requestsList').innerHTML = `
+                        <div class="no-requests">
+                            <i class="bi bi-shield-lock"></i>
+                            <h3>${escapeHtml(msg)}</h3>
+                            <p>Please ensure you are registered and logged in as a psychologist.</p>
+                        </div>`;
+                    return;
+                }
+
                 const requests = data.requests || [];
 
                 // Update notification count
@@ -1105,9 +1114,17 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (!response.ok) throw new Error('Failed to load clients');
-
                 const data = await response.json();
+                if (!response.ok) {
+                    const msg = data.error || 'Access denied';
+                    document.getElementById('clientsList').innerHTML = `
+                        <div class="empty-state">
+                            <i class="bi bi-shield-lock"></i>
+                            <h3>${escapeHtml(msg)}</h3>
+                            <p>Please ensure you are registered and logged in as a psychologist.</p>
+                        </div>`;
+                    return;
+                }
                 displayClients(data.users || []);
             } catch (error) {
                 console.error('Error loading clients:', error);
@@ -1278,8 +1295,6 @@
                 const response = await fetch(`${backendBase}/api/psychologist/status`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
-                if (!response.ok) throw new Error('Failed to load status');
 
                 const data = await response.json();
                 document.getElementById('statusSelect').value = data.status || 'available';

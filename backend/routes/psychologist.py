@@ -224,9 +224,9 @@ def get_psychologist_users(current_user_id, current_user_email):
     db.check_connection()
     user = db.get_user_by_email(current_user_email)
     if not user:
-        return jsonify({"error": "User not found"}), 403
+        return jsonify({"error": "User not found", "users": []}), 200
     if user.get("user_type") != "psychologist":
-        return jsonify({"error": "Unauthorized - not a psychologist"}), 403
+        return jsonify({"error": "Not a psychologist", "users": []}), 200
 
     users = db.get_accepted_chat_users(current_user_email)
     return jsonify({"users": users})
@@ -242,8 +242,10 @@ def connect_psychologist(current_user_id, current_user_email):
 
     db.check_connection()
     user = db.get_user_by_email(current_user_email)
-    if not user or user.get("user_type") != "psychologist":
-        return jsonify({"error": "Unauthorized"}), 403
+    if not user:
+        return jsonify({"error": "User not found"}), 403
+    if user.get("user_type") != "psychologist":
+        return jsonify({"error": "Not a psychologist"}), 403
 
     success = db.connect_psychologist_to_user(current_user_email, user_id)
     if success:
@@ -256,8 +258,10 @@ def connect_psychologist(current_user_id, current_user_email):
 def psychologist_status(current_user_id, current_user_email):
     db.check_connection()
     user = db.get_user_by_email(current_user_email)
-    if not user or user.get("user_type") != "psychologist":
-        return jsonify({"error": "Unauthorized"}), 403
+    if not user:
+        return jsonify({"error": "User not found", "status": "available"}), 200
+    if user.get("user_type") != "psychologist":
+        return jsonify({"error": "Not a psychologist", "status": "available"}), 200
 
     if request.method == "GET":
         return jsonify({"status": user.get("availability_status") or "available"})
@@ -432,8 +436,12 @@ def get_pending_requests(current_user_id, current_user_email, psychologist_id):
     authenticated_psychologist_id = db.resolve_user_identifier(current_user_email)
 
     user = db.get_user_by_email(authenticated_psychologist_id)
-    if not user or user.get("user_type") != "psychologist":
-        return jsonify({"error": "Unauthorized - not a psychologist"}), 403
+    if not user:
+        log.warning("Pending requests: user not found for email=%s", current_user_email)
+        return jsonify({"error": "User not found. Please register as a psychologist.", "requests": []}), 403
+    if user.get("user_type") != "psychologist":
+        log.warning("Pending requests: user_type=%s for email=%s", user.get('user_type'), current_user_email)
+        return jsonify({"error": "Account is not a psychologist account.", "requests": []}), 403
 
     requests_list = db.get_pending_requests(authenticated_psychologist_id)
     return jsonify({"requests": requests_list})
