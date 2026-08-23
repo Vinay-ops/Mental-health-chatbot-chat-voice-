@@ -4,9 +4,12 @@ High-fidelity emotional speech synthesis with natural speech patterns.
 """
 
 import os
+import logging
 import requests
 import re
 from typing import Optional, Tuple
+
+log = logging.getLogger(__name__)
 
 class EmotionalTTSService:
     """
@@ -150,19 +153,19 @@ class EmotionalTTSService:
                 "style": config["style"]
             }
             
-            print(f"DEBUG: Fish Audio synthesis - emotion: {emotion}, speed: {config['speed']}, pitch: {config['pitch']}")
+            log.debug("Fish Audio: emotion=%s, speed=%s, pitch=%s", emotion, config['speed'], config['pitch'])
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
                 audio_bytes = response.content
-                print(f"DEBUG: Fish Audio synthesis successful. Received {len(audio_bytes)} bytes of high-quality audio.")
+                log.debug("Fish Audio synthesis successful. Received %d bytes.", len(audio_bytes))
                 if output_path:
                     with open(output_path, 'wb') as f:
                         f.write(audio_bytes)
                 return True, "Fish Audio synthesis successful", audio_bytes
             else:
                 error_msg = f"Fish Audio API error: {response.status_code} - {response.text}"
-                print(f"DEBUG: {error_msg}")
+                log.debug("%s", error_msg)
                 return False, error_msg, None
                 
         except Exception as e:

@@ -4,6 +4,7 @@ Supports: Groq, Gemini, Grok (xAI), Ollama (local fallback).
 """
 
 import os
+import logging
 import requests
 from typing import Optional
 
@@ -11,6 +12,8 @@ from backend.config import (
     GROQ_API_KEY, GEMINI_API_KEY, XAI_API_KEY,
     OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_API_KEY,
 )
+
+log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +59,7 @@ SAFE_SYSTEM_PROMPT = (
 def groq_reply(message: str, system_prompt: str) -> Optional[str]:
     """Generate a reply using Groq API."""
     if not GROQ_API_KEY:
-        print("DEBUG: Groq API key missing")
+        log.debug("Groq API key missing")
         return None
     try:
         headers = {
@@ -82,16 +85,16 @@ def groq_reply(message: str, system_prompt: str) -> Optional[str]:
                 j = r.json()
                 if "choices" in j:
                     return j["choices"][0].get("message", {}).get("content")
-                print(f"DEBUG: Groq {model} failed: {j.get('error', {}).get('message')}")
+                log.debug("Groq %s failed: %s", model, j.get('error', {}).get('message'))
             except requests.exceptions.Timeout:
-                print(f"DEBUG: Groq {model} timed out.")
+                log.debug("Groq %s timed out.", model)
                 continue
             except Exception as e:
-                print(f"DEBUG: Groq {model} error: {e}")
+                log.debug("Groq %s error: %s", model, e)
                 continue
         return None
     except Exception as e:
-        print(f"Groq Exception: {e}")
+        log.error("Groq exception: %s", e)
         return None
 
 
@@ -135,10 +138,10 @@ def gemini_reply(message: str, system_prompt: str) -> Optional[str]:
                     .get("parts", [{}])[0]
                     .get("text")
                 )
-            print(f"DEBUG: Gemini {model} ({version}) failed: {j['error'].get('message')}")
+            log.debug("Gemini %s (%s) failed: %s", model, version, j['error'].get('message'))
         return None
     except Exception as e:
-        print(f"Gemini Exception: {e}")
+        log.error("Gemini exception: %s", e)
         return None
 
 
@@ -230,11 +233,11 @@ def generate_reply(provider: str, message: str, system_prompt: str) -> str:
 
     # Fallback chain: requested provider -> Ollama -> canned
     if not raw_reply:
-        print(f"DEBUG: Provider '{provider}' failed. Falling back to Ollama...")
+        log.debug("Provider '%s' failed. Falling back to Ollama...", provider)
         raw_reply = ollama_reply(message, system_prompt)
 
     if not raw_reply:
-        print("DEBUG: All providers failed. Using local fallback.")
+        log.debug("All providers failed. Using local fallback.")
         raw_reply = _local_fallback(message)
 
     return raw_reply

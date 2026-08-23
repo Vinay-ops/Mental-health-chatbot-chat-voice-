@@ -2,6 +2,7 @@
 Psychologist feature routes: chat requests, messaging, user listing, status.
 """
 
+import logging
 import uuid
 import re
 import requests as http_requests
@@ -12,6 +13,7 @@ from flask import Blueprint, request, jsonify
 import backend.database.db as db
 from backend.helpers import token_required, normalize_location_text
 
+log = logging.getLogger(__name__)
 psychologist_bp = Blueprint("psychologist", __name__)
 
 
@@ -191,7 +193,7 @@ def _fetch_live_psychologists(location_query: str, limit: int = 8) -> list:
 
         return results[:limit]
     except Exception as e:
-        print(f"DEBUG: Live psychologist lookup failed: {e}")
+        log.debug("Live psychologist lookup failed: %s", e)
         return []
 
 

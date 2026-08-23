@@ -2,6 +2,7 @@
 Chat routes: AI chat, TTS synthesis, chat history.
 """
 
+import logging
 import random
 import re
 import uuid
@@ -18,6 +19,7 @@ from backend.ai.providers import (
     SAFE_SYSTEM_PROMPT, generate_reply,
 )
 
+log = logging.getLogger(__name__)
 chat_bp = Blueprint("chat", __name__)
 
 # In-memory session stores (swap for Redis in production)
@@ -35,7 +37,7 @@ def _get_tts_service():
             from backend.services.tts import EmotionalTTSService
             _tts_service = EmotionalTTSService(method="fish")
         except Exception as e:
-            print(f"Warning: TTS Service init failed: {e}")
+            log.warning("TTS Service init failed: %s", e)
 
             class _DummyTTS:
                 def synthesize(self, *a, **kw):

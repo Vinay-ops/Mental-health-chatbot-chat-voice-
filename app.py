@@ -10,12 +10,20 @@ for _name in ("MutableMapping", "Mapping", "Sequence", "Iterable", "Callable"):
     if not hasattr(collections, _name):
         setattr(collections, _name, getattr(collections.abc, _name))
 
+import logging
 import os
 from flask import Flask, jsonify, request, render_template, send_from_directory
 
 import backend.database.db as db
 from backend.config import FLASK_DEBUG, SERVER_PORT
 from backend.routes import auth_bp, chat_bp, psychologist_bp, community_bp
+
+log = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 # ---------------------------------------------------------------------------
 # App factory
@@ -114,7 +122,7 @@ def contact_api():
     if not name or not email or not message:
         return jsonify({"error": "Missing fields"}), 400
 
-    print(f"Contact Form Submission: {name} ({email}) - {message}")
+    log.info("Contact form: %s (%s)", name, email)
     return jsonify({"success": "Message sent successfully"})
 
 
@@ -147,9 +155,9 @@ def handle_preflight():
 try:
     if db.check_connection():
         db.ensure_schema()
-        print("DEBUG: Database schema verified.")
+        log.info("Database schema verified.")
 except Exception as e:
-    print(f"DEBUG: Schema initialization failed: {e}")
+    log.warning("Schema initialization failed: %s", e)
 
 
 # ---------------------------------------------------------------------------
