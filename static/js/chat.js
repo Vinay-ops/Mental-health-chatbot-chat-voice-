@@ -266,7 +266,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ message, provider, lang, session_id: sessionId })
             });
             
-            if (!res.ok) throw new Error('API Error');
+            if (!res.ok) {
+                let detail = 'API Error';
+                try {
+                    const errBody = await res.json();
+                    if (errBody && errBody.error) detail = errBody.error;
+                } catch (e) { /* ignore non-JSON error body */ }
+                throw new Error(detail);
+            }
             const data = await res.json();
             
             // Save session ID for memory

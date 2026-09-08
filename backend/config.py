@@ -16,7 +16,7 @@ SERVER_PORT = int(os.getenv("SERVER_PORT", "8002"))
 # JWT Authentication
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change")
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXP_MIN", "120"))
+JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXP_MIN", "1440"))  # 24h default
 
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL")

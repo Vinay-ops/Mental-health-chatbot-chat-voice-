@@ -53,5 +53,5 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     user_type = user.get("user_type", "user")
-    token = create_token(user["email"], user["email"], user_type)
+    token = create_token(str(user["_id"]), user["email"], user_type)
     return jsonify({"token": token, "name": user.get("name", "User"), "user_type": user_type})

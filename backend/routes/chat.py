@@ -91,7 +91,7 @@ def _build_quality_prompt_addon(session_id: str) -> str:
         return base
     joined = "\n".join(f"- {r}" for r in recent)
     return (
-        + base
+        base
         + "- Do NOT reuse the same wording, openings, or sentence patterns from these recent assistant replies:\n"
         + joined + "\n"
         + "- Write a fresh, meaningfully different response.\n"
@@ -133,6 +133,24 @@ def _parse_mood_and_reply(raw: str) -> tuple[str, str]:
 
 @chat_bp.route("/api/chat", methods=["POST"])
 def chat_api():
+    try:
+        return _chat_api_impl()
+    except Exception as e:
+        log.exception("Unexpected error in /api/chat: %s", e)
+        session_id = None
+        try:
+            session_id = (request.get_json(silent=True) or {}).get("session_id")
+        except Exception:
+            pass
+        return jsonify({
+            "reply": _local_fallback(""),
+            "sentiment": "neutral",
+            "session_id": session_id,
+            "error": "Temporary issue with the AI service. Please try again.",
+        }), 200
+
+
+def _chat_api_impl():
     data = request.json
     message = data.get("message", "")
     provider = data.get("provider")
