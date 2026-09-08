@@ -66,7 +66,7 @@ def groq_reply(message: str, system_prompt: str) -> Optional[str]:
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json",
         }
-        for model in ["llama-3.1-8b-instant", "openai/gpt-oss-20b"]:
+        for model in ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]:
             payload = {
                 "model": model,
                 "messages": [
