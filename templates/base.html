@@ -30,8 +30,8 @@
 
             <ul class="nav-pills-glass d-none d-lg-flex mx-auto">
                 <li><a class="nav-pill-link {% if request.endpoint == 'home' %}active{% endif %}" href="{{ url_for('home') }}" data-t="nav_home">Home</a></li>
-                <li><a class="nav-pill-link {% if request.endpoint == 'chat' %}active{% endif %}" href="{{ url_for('chat') }}">AI Companion</a></li>
-                <li><a class="nav-pill-link {% if request.endpoint == 'psychologist_list' %}active{% endif %}" href="{{ url_for('psychologist_list') }}">Psychologists</a></li>
+                <li><a class="nav-pill-link {% if request.endpoint == 'chat' %}active{% endif %}" href="{{ url_for('chat') }}" data-t="nav_ai_companion">AI Companion</a></li>
+                <li><a class="nav-pill-link {% if request.endpoint == 'psychologist_list' %}active{% endif %}" href="{{ url_for('psychologist_list') }}" data-t="nav_psychologists">Psychologists</a></li>
                 <li><a class="nav-pill-link {% if request.endpoint == 'community_page' %}active{% endif %}" href="{{ url_for('community_page') }}" data-t="nav_community">Community</a></li>
                 <li><a class="nav-pill-link {% if request.endpoint == 'locator' %}active{% endif %}" href="{{ url_for('locator') }}" data-t="nav_locator">Nearby Help</a></li>
                 <li><a class="nav-pill-link {% if request.endpoint == 'contact' %}active{% endif %}" href="{{ url_for('contact') }}" data-t="nav_support">Support</a></li>
@@ -76,7 +76,7 @@
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ url_for('chat') }}"><i class="bi bi-chat-dots me-2"></i><span data-t="nav_chat">Start Chat</span></a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('psychologist_list') }}"><i class="bi bi-person-check me-2"></i><span>Psychologists</span></a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('psychologist_list') }}"><i class="bi bi-person-check me-2"></i><span data-t="nav_psychologists">Psychologists</span></a></li>
                         <li><a class="dropdown-item" href="{{ url_for('community_page') }}"><i class="bi bi-people me-2"></i><span data-t="nav_community">Community</span></a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><button class="dropdown-item text-danger" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i><span data-t="nav_logout">Logout</span></button></li>
@@ -92,8 +92,8 @@
     <!-- Mobile Floating Glass Bottom Navigation -->
     <nav class="mobile-bottom-nav d-lg-none" aria-label="Mobile navigation">
         <a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}"><i class="bi bi-house-heart"></i><span data-t="nav_home">Home</span></a>
-        <a href="{{ url_for('chat') }}" class="{% if request.endpoint == 'chat' %}active{% endif %}"><i class="bi bi-stars"></i><span>AI Chat</span></a>
-        <a href="{{ url_for('psychologist_list') }}" class="{% if request.endpoint == 'psychologist_list' %}active{% endif %}"><i class="bi bi-person-check"></i><span>Experts</span></a>
+        <a href="{{ url_for('chat') }}" class="{% if request.endpoint == 'chat' %}active{% endif %}"><i class="bi bi-stars"></i><span data-t="nav_ai_chat">AI Chat</span></a>
+        <a href="{{ url_for('psychologist_list') }}" class="{% if request.endpoint == 'psychologist_list' %}active{% endif %}"><i class="bi bi-person-check"></i><span data-t="nav_experts">Experts</span></a>
         <a href="{{ url_for('community_page') }}" class="{% if request.endpoint == 'community_page' %}active{% endif %}"><i class="bi bi-people"></i><span data-t="nav_community">Community</span></a>
         <a href="{{ url_for('contact') }}" class="{% if request.endpoint == 'contact' %}active{% endif %}"><i class="bi bi-life-preserver"></i><span data-t="nav_support">Support</span></a>
     </nav>
